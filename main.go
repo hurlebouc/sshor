@@ -4,43 +4,125 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 )
 
-func main() {
+var keepassPathFlag = flag.String("keepass", "", "path of the keepass vault")
+var keepassIdFlag = flag.String("keepass-id", "", "entry in the keepass vault (/<PATH>/<OF>/<ENTRY> or /<PATH>/<OF>/<ENTRY>)")
+var keepassPwdFlag = flag.String("keepass-pwd", "", "password of the keepass vault")
+var loginFlag = flag.String("login", "", "SSH login")
+var passwordFlag = flag.String("password", "", "SSH password")
+var portFlag = flag.Uint("port", 0, "SSH port")
 
-	var keepassPath = flag.String("keepass", "", "path of the keepass vault")
-	var keepassId = flag.String("keepass-id", "", "entry in the keepass vault (/<PATH>/<OF>/<ENTRY> or /<PATH>/<OF>/<ENTRY>)")
-	var keepassPwd = flag.String("keepass-pwd", "", "password of the keepass vault")
-	flag.Parse()
+func printUsageAndExit() {
+	fmt.Printf("sshor [options] HOST")
+	flag.Usage()
+	os.Exit(1)
+}
+
+func getFullHost() string {
 	args := flag.Args()
 	if len(args) == 0 {
-		fmt.Printf("sshor [options] <USER>@<HOST>[:<PORT>]")
-		flag.Usage()
-		os.Exit(1)
+		printUsageAndExit()
 	}
-	println(*keepassPath)
-	println(*keepassId)
-	println(*keepassPwd)
+	return args[0]
+}
 
-	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
-	if err != nil {
-		panic(err)
+func splitFullHost(fullHost string) (*string, string, *uint16) {
+	splits := strings.SplitN(fullHost, "@", 2)
+	var login *string
+	var port *uint16
+	var host string
+	var hostWithPort string
+	if len(splits) == 1 {
+		hostWithPort = fullHost
+		login = nil
+	} else if len(splits) == 2 {
+		hostWithPort = splits[1]
+		login = &splits[0]
+	} else {
+		panic("unreachable")
 	}
-	defer term.Restore(int(os.Stdin.Fd()), oldState)
+	portSplit := strings.SplitN(hostWithPort, ":", 2)
+	if len(portSplit) == 1 {
+		port = nil
+		host = hostWithPort
+	} else if len(portSplit) == 2 {
+		portint, err := strconv.Atoi(portSplit[1])
+		portu16 := uint16(portint)
+		if err != nil {
+			panic(err)
+		}
+		port = &portu16
+		host = portSplit[0]
+	} else {
+		panic("unreachable")
+	}
+	return login, host, port
+}
+
+func getLogin() string {
+	if *loginFlag != "" {
+		return *loginFlag
+	}
+	loginFromHost, _, _ := splitFullHost(getFullHost())
+	if loginFromHost != nil {
+		return *loginFromHost
+	}
+	printUsageAndExit()
+	panic("unreachable")
+}
+
+func getHost() string {
+	_, host, _ := splitFullHost(getFullHost())
+	return host
+}
+
+func getPort() uint16 {
+	if *portFlag != 0 {
+		return uint16(*portFlag)
+	}
+	_, _, portFromHost := splitFullHost(getFullHost())
+	if portFromHost != nil {
+		return *portFromHost
+	}
+	return 22
+}
+
+func getPassword() *string {
+	if *passwordFlag != "" {
+		return passwordFlag
+	}
+	return nil
+}
+
+func getAuthMethod() ssh.AuthMethod {
+	pwd := getPassword()
+	if pwd != nil {
+		return ssh.Password(*pwd)
+	} else {
+		return ssh.KeyboardInteractive(nil) //todo
+	}
+}
+
+func main() {
+
+	flag.Parse()
 
 	// Create client config
 	config := &ssh.ClientConfig{
-		User: "XXXXX",
+		User: getLogin(),
 		Auth: []ssh.AuthMethod{
-			ssh.Password("WWWWWWW"),
+			getAuthMethod(),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	// Connect to ssh server
-	conn, err := ssh.Dial("tcp", "localhost:22", config)
+	conn, err := ssh.Dial("tcp", getHost()+":"+strconv.Itoa(int(getPort())), config)
 	if err != nil {
 		panic(err)
 	}
@@ -56,6 +138,12 @@ func main() {
 		//ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
 		//ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
 	}
+
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		panic(err)
+	}
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
 	width, height, err := term.GetSize(int(os.Stdin.Fd()))
 	if err != nil {
