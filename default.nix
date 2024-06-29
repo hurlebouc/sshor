@@ -22,6 +22,7 @@
                                 export GOPATH=$HOME/gohome/"$goversion"/go
                                 export GOCACHE=$HOME/gohome/"$goversion"/cache
                                 export GOENV=$HOME/gohome/"$goversion"/env
+                                export PATH=$GOPATH/bin:$PATH
                                 '';
      
    };
