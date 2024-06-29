@@ -10,9 +10,6 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
-
-	"github.com/samber/lo"
-	"github.com/tobischo/gokeepasslib"
 )
 
 var keepassPathFlag = flag.String("keepass", "", "path of the keepass vault")
@@ -22,7 +19,8 @@ var loginFlag = flag.String("login", "", "SSH login")
 var passwordFlag = flag.String("password", "", "SSH password")
 var portFlag = flag.Uint("port", 0, "SSH port")
 
-func printUsageAndExit() {
+func printUsageAndExit(msg string) {
+	fmt.Println(msg)
 	fmt.Printf("sshor [options] HOST")
 	flag.Usage()
 	os.Exit(1)
@@ -31,7 +29,7 @@ func printUsageAndExit() {
 func getFullHost() string {
 	args := flag.Args()
 	if len(args) == 0 {
-		printUsageAndExit()
+		printUsageAndExit("Host is missing")
 	}
 	return args[0]
 }
@@ -103,12 +101,21 @@ func getPort() uint16 {
 func getPassword() string {
 	if *passwordFlag != "" {
 		return *passwordFlag
-	} else {
-		print("Password: ")
-		var pwd string
-		fmt.Scanln(&pwd)
-		return pwd
 	}
+	if *keepassPathFlag != "" {
+		path := *keepassPathFlag
+		pwd := *keepassPwdFlag
+		id := *keepassIdFlag
+
+		if id == "" {
+			printUsageAndExit("Keepass ID access is empty")
+		}
+		return readKeepass(path, pwd, id, getLogin())
+	}
+	print("Password: ")
+	var pwd string
+	fmt.Scanln(&pwd)
+	return pwd
 }
 
 func getAuthMethod() ssh.AuthMethod {
@@ -116,59 +123,7 @@ func getAuthMethod() ssh.AuthMethod {
 	return ssh.Password(pwd)
 }
 
-func findEntries(group []gokeepasslib.Group, path []string, username string) []gokeepasslib.Entry {
-	if len(path) == 0 {
-		panic("search path cannot be empty")
-	}
-	currentGroups := group
-	currentPath := path
-	for {
-		if len(currentPath) == 1 {
-			return lo.FlatMap(currentGroups, func(group gokeepasslib.Group, idx int) []gokeepasslib.Entry {
-				return lo.Filter(group.Entries, func(entry gokeepasslib.Entry, idx int) bool {
-					return entry.GetTitle() == currentPath[0] && entry.Get("UserName").Value.Content == username
-				})
-			})
-
-		}
-		groupName := currentPath[0]
-		currentPath = currentPath[1:]
-		currentGroups = lo.FlatMap(currentGroups, func(group gokeepasslib.Group, idx int) []gokeepasslib.Group {
-			return lo.Filter(group.Groups, func(subgroup gokeepasslib.Group, idx int) bool { return subgroup.Name == groupName })
-		})
-	}
-}
-
-func readKeepass() {
-	file, err := os.Open("Database.kdbx")
-	if err != nil {
-		panic(err)
-	}
-
-	db := gokeepasslib.NewDatabase()
-	db.Credentials = gokeepasslib.NewPasswordCredentials("plop")
-	err = gokeepasslib.NewDecoder(file).Decode(db)
-	if err != nil {
-		panic(err)
-	}
-
-	db.UnlockProtectedEntries()
-	fmt.Printf("db: %+v\n", db)
-	fmt.Printf("content: %+v\n", db.Content)
-	fmt.Printf("root: %+v\n", db.Content.Root)
-	fmt.Printf("groups: %+v\n", db.Content.Root.Groups)
-	fmt.Printf("groups.len: %+v\n", len(db.Content.Root.Groups))
-	fmt.Printf("groups.len: %+v\n", len(db.Content.Root.Groups[0].Groups))
-	fmt.Printf("current: %+v\n", db.Content.Root.Groups[0].Entries[0].Get("UserName").Value.Content)
-
-	entry := db.Content.Root.Groups[0].Groups[0].Entries[0]
-	fmt.Println(entry.GetTitle())
-	fmt.Println(entry.GetPassword())
-}
-
 func main() {
-
-	//readKeepass()
 
 	flag.Parse()
 
