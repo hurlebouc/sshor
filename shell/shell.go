@@ -1,7 +1,6 @@
-package main
+package shell
 
 import (
-	"flag"
 	"os"
 	"strconv"
 
@@ -9,20 +8,18 @@ import (
 	"golang.org/x/term"
 )
 
-func shell() {
-
-	flag.Parse()
+func Shell(login, host string, port uint16, authMethod ssh.AuthMethod) {
 
 	// Create client config
 	config := &ssh.ClientConfig{
-		User: getLogin(),
+		User: login,
 		Auth: []ssh.AuthMethod{
-			getAuthMethod(),
+			authMethod,
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	// Connect to ssh server
-	conn, err := ssh.Dial("tcp", getHost()+":"+strconv.Itoa(int(getPort())), config)
+	conn, err := ssh.Dial("tcp", host+":"+strconv.Itoa(int(port)), config)
 	if err != nil {
 		panic(err)
 	}

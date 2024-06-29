@@ -1,4 +1,4 @@
-package main
+package shell
 
 import (
 	"os"
@@ -36,7 +36,7 @@ func findEntries(groups []gokeepasslib.Group, path []string, username string) []
 	}
 }
 
-func readKeepass(path, pwd, id, username string) string {
+func ReadKeepass(path, pwd, id, username string) string {
 	file, err := os.Open(path)
 	if err != nil {
 		panic(err)
