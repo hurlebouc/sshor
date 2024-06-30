@@ -22,6 +22,10 @@ var keepassPwdFlag string
 var loginFlag string
 var passwordFlag string
 var portFlag uint16
+var completionBashFlag bool
+var completionZshFlag bool
+var completionFishFlag bool
+var completionPwshFlag bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -33,11 +37,35 @@ examples and usage of using your application. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		fmt.Printf("debug cmd: %+v\n", cmd)
+		fmt.Printf("debug args: %+v\n", args)
+		fmt.Printf("debug toComplete: %s\n", toComplete)
+		if len(args) == 0 {
+			return findAllPossibleHosts(toComplete), cobra.ShellCompDirectiveDefault
+		} else {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+	},
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		shell.Shell(getLogin(args), getHost(args), getPort(args), getAuthMethod(args))
+		if completionBashFlag {
+			cmd.Root().GenBashCompletionV2(os.Stdout, true)
+		} else if completionZshFlag {
+			cmd.Root().GenZshCompletion(os.Stdout)
+		} else if completionFishFlag {
+			cmd.Root().GenFishCompletion(os.Stdout, true)
+		} else if completionPwshFlag {
+			cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+		} else {
+			shell.Shell(getLogin(args), getHost(args), getPort(args), getAuthMethod(args))
+		}
 	},
+}
+
+func findAllPossibleHosts(toComplete string) []string {
+	panic("todo")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -57,9 +85,13 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&keepassPathFlag, "keepass", "", "path of the keepass vault")
 	rootCmd.PersistentFlags().StringVar(&keepassIdFlag, "keepass-id", "", "entry in the keepass vault (/<PATH>/<OF>/<ENTRY> or /<PATH>/<OF>/<ENTRY>)")
 	rootCmd.PersistentFlags().StringVar(&keepassPwdFlag, "keepass-pwd", "", "password of the keepass vault")
-	rootCmd.PersistentFlags().StringVar(&loginFlag, "login", "", "SSH login")
-	rootCmd.PersistentFlags().StringVar(&passwordFlag, "password", "", "SSH password")
-	rootCmd.PersistentFlags().Uint16Var(&portFlag, "port", 0, "SSH port")
+	rootCmd.PersistentFlags().StringVarP(&loginFlag, "login", "l", "", "SSH login")
+	rootCmd.PersistentFlags().StringVarP(&passwordFlag, "password", "w", "", "SSH password")
+	rootCmd.PersistentFlags().Uint16VarP(&portFlag, "port", "p", 0, "SSH port")
+	rootCmd.PersistentFlags().BoolVar(&completionBashFlag, "completion-bash", false, "Generate completion for bash")
+	rootCmd.PersistentFlags().BoolVar(&completionZshFlag, "completion-zsh", false, "Generate completion for zsh")
+	rootCmd.PersistentFlags().BoolVar(&completionFishFlag, "completion-fish", false, "Generate completion for fish")
+	rootCmd.PersistentFlags().BoolVar(&completionPwshFlag, "completion-pwsh", false, "Generate completion for PowerShell")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
