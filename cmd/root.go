@@ -4,9 +4,9 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/user"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -85,9 +85,12 @@ func readConf() (*cue.Value, error) {
 		panic(err)
 	}
 
-	path := fmt.Sprintf("%s%c%s", configdir, os.PathSeparator, "config.cue")
+	path := "sshor.cue"
 	if !existFile(path) {
-		path = "sshor.cue"
+		path, err= filepath.Abs(configdir + "/sshor/config.cue")
+		if err != nil {
+			panic(err)
+		}
 	}
 	if !existFile(path) {
 		return nil, nil
