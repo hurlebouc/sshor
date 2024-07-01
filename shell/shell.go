@@ -47,7 +47,7 @@ func Shell(login, host string, port uint16, authMethod ssh.AuthMethod) {
 		panic(err)
 	}
 	// Request pseudo terminal
-	if err := session.RequestPty("xterm", height, width, modes); err != nil {
+	if err := session.RequestPty("xterm-256color", height, width, modes); err != nil {
 		panic(err)
 	}
 
