@@ -1,4 +1,4 @@
-#machine1: {
+_machine1: {
 	plop: {
 		ip: "1.2.3.4"
 	}
@@ -7,12 +7,23 @@
 	}
 }
 
-#machine2: {
+_machine2: {
 	plap: {
 		ip: "8.8.8.8"
 	}
 }
 
-#machine1: [Name=_]: "keepass-access": "/chemin/vers/\(Name)"
+// _machine1: [Name=_]: "keepass-access": "/chemin/vers/\(Name)"
 
-machine: #machine1
+machine: {
+	for k, v in _machine1 {
+		(k): v
+		(k): {keepassAccess: "/chemin/vers/\(k)"}
+	}
+}
+machine: {
+	for k, v in _machine2 {
+		(k): v
+		(k): {aaaa: v.ip}
+	}
+}
