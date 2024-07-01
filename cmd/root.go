@@ -10,10 +10,11 @@ import (
 	"strconv"
 	"strings"
 
-	"sshor/shell"
+	"github.com/hurlebouc/sshor/shell"
 
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/cuecontext"
+	"cuelang.org/go/cue/load"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
 )
@@ -40,9 +41,9 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		fmt.Printf("debug cmd: %+v\n", cmd)
-		fmt.Printf("debug args: %+v\n", args)
-		fmt.Printf("debug toComplete: %s\n", toComplete)
+		//fmt.Printf("debug cmd: %+v\n", cmd)
+		//fmt.Printf("debug args: %+v\n", args)
+		//fmt.Printf("debug toComplete: %s\n", toComplete)
 		if len(args) == 0 {
 			return findAllPossibleHosts(toComplete), cobra.ShellCompDirectiveDefault
 		} else {
@@ -66,28 +67,56 @@ to quickly create a Cobra application.`,
 	},
 }
 
-func readConf() ([]byte, error) {
-	configdir, err := os.UserConfigDir()
+func existFile(path string) bool {
+	info, err := os.Stat(path)
 	if err != nil {
-		return []byte{}, err
+		return false
 	}
-	config, err := os.ReadFile(configdir + "/sshor/config.cue")
-
-	conf, err := os.ReadFile("conf.cue")
-	return conf, nil
+	return !info.IsDir()
 }
 
-func findAllPossibleHosts(toComplete string) []string {
+func readConf() (*cue.Value, error) {
 	ctx := cuecontext.New()
-	content, err := readConf() // the file is inside the local directory
+
+	configdir, err := os.UserConfigDir()
 	if err != nil {
 		panic(err)
 	}
-	value := ctx.CompileBytes(content)
-	if value.Err() != nil {
-		panic(value.Err())
+
+	path := fmt.Sprintf("%s%c%s", configdir, os.PathSeparator, "config.cue")
+	if !existFile(path) {
+		path = "sshor.cue"
 	}
-	//fmt.Printf("value: %+v\n", value)
+	if !existFile(path) {
+		return nil, nil
+	}
+
+	// Load the package "example" from the current directory.
+	// We don't need to specify a config in this example.
+	insts := load.Instances([]string{path}, nil)
+
+	// The current directory just has one file without any build tags,
+	// and that file belongs to the example package.
+	// So we get a single instance as a result.
+	value := ctx.BuildInstance(insts[0])
+
+	if value.Err() != nil {
+		return nil, value.Err()
+	}
+
+	return &value, nil
+}
+
+func findAllPossibleHosts(toComplete string) []string {
+
+	value, err := readConf()
+	if err != nil {
+		panic(err)
+	}
+	if value == nil {
+		return []string{}
+	}
+
 	ite, err := value.LookupPath(cue.ParsePath("hosts")).Fields()
 	if err != nil {
 		panic(err)
@@ -98,7 +127,6 @@ func findAllPossibleHosts(toComplete string) []string {
 		if !hasnext {
 			break
 		}
-		//fmt.Printf("%v\n", ite.Selector().String())
 		hostName := ite.Selector().String()
 		if strings.HasPrefix(hostName, toComplete) {
 			res = append(res, hostName)
