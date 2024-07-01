@@ -9,6 +9,7 @@ import (
 	"os/user"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/hurlebouc/sshor/shell"
 
@@ -17,6 +18,7 @@ import (
 	"cuelang.org/go/cue/load"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/term"
 )
 
 var keepassPathFlag string
@@ -251,9 +253,11 @@ func getPassword(args []string) string {
 		return shell.ReadKeepass(path, pwd, id, getLogin(args))
 	}
 	print("Password: ")
-	var pwd string
-	fmt.Scanln(&pwd)
-	return pwd
+	bytePassword, err := term.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		panic(err)
+	}
+	return string(bytePassword)
 }
 
 func getAuthMethod(args []string) ssh.AuthMethod {
