@@ -15,13 +15,13 @@ _machine2: {
 
 // _machine1: [Name=_]: "keepass-access": "/chemin/vers/\(Name)"
 
-machine: {
+hosts: {
 	for k, v in _machine1 {
 		(k): v
 		(k): {keepassAccess: "/chemin/vers/\(k)"}
 	}
 }
-machine: {
+hosts: {
 	for k, v in _machine2 {
 		(k): v
 		(k): {aaaa: v.ip}

@@ -12,6 +12,8 @@ import (
 
 	"sshor/shell"
 
+	"cuelang.org/go/cue"
+	"cuelang.org/go/cue/cuecontext"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
 )
@@ -64,8 +66,45 @@ to quickly create a Cobra application.`,
 	},
 }
 
+func readConf() ([]byte, error) {
+	configdir, err := os.UserConfigDir()
+	if err != nil {
+		return []byte{}, err
+	}
+	config, err := os.ReadFile(configdir + "/sshor/config.cue")
+
+	conf, err := os.ReadFile("conf.cue")
+	return conf, nil
+}
+
 func findAllPossibleHosts(toComplete string) []string {
-	panic("todo")
+	ctx := cuecontext.New()
+	content, err := readConf() // the file is inside the local directory
+	if err != nil {
+		panic(err)
+	}
+	value := ctx.CompileBytes(content)
+	if value.Err() != nil {
+		panic(value.Err())
+	}
+	//fmt.Printf("value: %+v\n", value)
+	ite, err := value.LookupPath(cue.ParsePath("hosts")).Fields()
+	if err != nil {
+		panic(err)
+	}
+	res := []string{}
+	for {
+		hasnext := ite.Next()
+		if !hasnext {
+			break
+		}
+		//fmt.Printf("%v\n", ite.Selector().String())
+		hostName := ite.Selector().String()
+		if strings.HasPrefix(hostName, toComplete) {
+			res = append(res, hostName)
+		}
+	}
+	return res
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
