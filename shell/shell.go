@@ -42,7 +42,7 @@ func Shell(login, host string, port uint16, authMethod ssh.AuthMethod) {
 	}
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
-	width, height, err := term.GetSize(int(os.Stdin.Fd()))
+	width, height, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		panic(err)
 	}
