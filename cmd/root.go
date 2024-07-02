@@ -4,6 +4,7 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"encoding/json"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -11,9 +12,10 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/hurlebouc/sshor/config"
 	"github.com/hurlebouc/sshor/shell"
+	"github.com/samber/lo"
 
-	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/cuecontext"
 	"cuelang.org/go/cue/load"
 	"github.com/spf13/cobra"
@@ -77,7 +79,7 @@ func existFile(path string) bool {
 	return !info.IsDir()
 }
 
-func readConf() (*cue.Value, error) {
+func readConf() (*config.Config, error) {
 	ctx := cuecontext.New()
 
 	configdir, err := os.UserConfigDir()
@@ -87,7 +89,7 @@ func readConf() (*cue.Value, error) {
 
 	path := "sshor.cue"
 	if !existFile(path) {
-		path, err= filepath.Abs(configdir + "/sshor/config.cue")
+		path, err = filepath.Abs(configdir + "/sshor/config.cue")
 		if err != nil {
 			panic(err)
 		}
@@ -109,35 +111,36 @@ func readConf() (*cue.Value, error) {
 		return nil, value.Err()
 	}
 
-	return &value, nil
+	jsonBytes, err := value.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	config := config.Config{}
+	err = json.Unmarshal(jsonBytes, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
 
 func findAllPossibleHosts(toComplete string) []string {
 
-	value, err := readConf()
+	config, err := readConf()
 	if err != nil {
 		panic(err)
 	}
-	if value == nil {
+	if config == nil {
 		return []string{}
 	}
 
-	ite, err := value.LookupPath(cue.ParsePath("hosts")).Fields()
-	if err != nil {
-		panic(err)
+	keys := make([]string, 0, len(config.Hosts))
+	for k := range config.Hosts {
+		keys = append(keys, k)
 	}
-	res := []string{}
-	for {
-		hasnext := ite.Next()
-		if !hasnext {
-			break
-		}
-		hostName := ite.Selector().String()
-		if strings.HasPrefix(hostName, toComplete) {
-			res = append(res, hostName)
-		}
-	}
-	return res
+
+	return lo.Filter(keys, func(item string, idx int) bool { return strings.HasPrefix(item, toComplete) })
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
