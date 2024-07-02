@@ -132,6 +132,7 @@ func readConf() (*config.Config, error) {
 }
 
 func findAllPossibleHosts(toComplete string) []string {
+	login, host, _ := splitFullHost(toComplete)
 
 	config, err := readConf()
 	if err != nil {
@@ -146,7 +147,13 @@ func findAllPossibleHosts(toComplete string) []string {
 		keys = append(keys, k)
 	}
 
-	return lo.Filter(keys, func(item string, idx int) bool { return strings.HasPrefix(item, toComplete) })
+	return lo.Map(lo.Filter(keys, func(item string, idx int) bool { return strings.HasPrefix(item, host) }), func(item string, idx int) string {
+		if login == nil {
+			return item
+		} else {
+			return *login + "@" + item
+		}
+	})
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
