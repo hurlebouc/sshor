@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -66,7 +67,11 @@ to quickly create a Cobra application.`,
 		} else if completionPwshFlag {
 			cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
 		} else {
-			shell.Shell(getLogin(args), getHost(args), getPort(args), getAuthMethod(args))
+			config, err := readConf()
+			if err != nil {
+				panic(fmt.Errorf("Cannot read config: %w", err))
+			}
+			shell.Shell(getLogin(args, config), getHost(args, config), getPort(args, config), getAuthMethod(args, config))
 		}
 	},
 }
@@ -213,51 +218,109 @@ func splitFullHost(fullHost string) (*string, string, *uint16) {
 	return login, host, port
 }
 
-func getLogin(args []string) string {
+func getLogin(args []string, config *config.Config) string {
 	if loginFlag != "" {
 		return loginFlag
 	}
-	loginFromHost, _, _ := splitFullHost(getFullHost(args))
+	loginFromHost, host, _ := splitFullHost(getFullHost(args))
 	if loginFromHost != nil {
 		return *loginFromHost
 	}
+
+	loginFromConfig := config.GetHost(host).GetUser()
+	if loginFromConfig != nil {
+		return *loginFromConfig
+	}
+
 	currentUser, err := user.Current()
 	if err != nil {
 		panic(err)
 	}
 	return currentUser.Username
+
 }
 
-func getHost(args []string) string {
+func getHost(args []string, config *config.Config) string {
 	_, host, _ := splitFullHost(getFullHost(args))
+
+	hostFromConfig := config.GetHost(host).GetHost()
+	if hostFromConfig != nil {
+		return *hostFromConfig
+	}
+
 	return host
 }
 
-func getPort(args []string) uint16 {
+func getPort(args []string, config *config.Config) uint16 {
 	if portFlag != 0 {
 		return uint16(portFlag)
 	}
-	_, _, portFromHost := splitFullHost(getFullHost(args))
+	_, host, portFromHost := splitFullHost(getFullHost(args))
 	if portFromHost != nil {
 		return *portFromHost
 	}
+
+	portFromConfig := config.GetHost(host).GetPort()
+	if portFromConfig != nil {
+		return *portFromConfig
+	}
+
 	return 22
 }
 
-func getPassword(args []string) string {
+func getPassword(args []string, config *config.Config) string {
 	if passwordFlag != "" {
 		return passwordFlag
 	}
-	if keepassPathFlag != "" {
-		path := keepassPathFlag
-		pwd := keepassPwdFlag
-		id := keepassIdFlag
 
+	_, host, _ := splitFullHost(getFullHost(args))
+
+	var path string
+	var pwd string
+	var id string
+
+	if keepassPathFlag != "" {
+		path = keepassPathFlag
+	} else {
+		keepassFromConfig := config.GetHost(host).GetKeepass()
+		if keepassFromConfig != nil {
+			path = *keepassFromConfig
+		}
+	}
+
+	if keepassPwdFlag != "" {
+		pwd = keepassPwdFlag
+	} else {
+		pwdFromConfig := config.GetHost(host).GetKeepassPwd()
+		if pwdFromConfig != nil {
+			pwd = *pwdFromConfig
+		}
+	}
+
+	if keepassIdFlag != "" {
+		id = keepassIdFlag
+	} else {
+		idFromConfig := config.GetHost(host).GetKeepassId()
+		if idFromConfig != nil {
+			id = *idFromConfig
+		}
+	}
+
+	if path != "" {
 		if id == "" {
 			panic("Keepass ID access is empty")
 		}
-		return shell.ReadKeepass(path, pwd, id, getLogin(args))
+		if pwd == "" {
+			print("Keepass vault password: ")
+			bytePassword, err := term.ReadPassword(int(syscall.Stdin))
+			if err != nil {
+				panic(err)
+			}
+			pwd = string(bytePassword)
+		}
+		return shell.ReadKeepass(path, pwd, id, getLogin(args, config))
 	}
+
 	print("Password: ")
 	bytePassword, err := term.ReadPassword(int(syscall.Stdin))
 	if err != nil {
@@ -266,7 +329,7 @@ func getPassword(args []string) string {
 	return string(bytePassword)
 }
 
-func getAuthMethod(args []string) ssh.AuthMethod {
-	pwd := getPassword(args)
+func getAuthMethod(args []string, config *config.Config) ssh.AuthMethod {
+	pwd := getPassword(args, config)
 	return ssh.Password(pwd)
 }
