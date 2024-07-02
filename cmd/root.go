@@ -39,13 +39,46 @@ var completionPwshFlag bool
 var rootCmd = &cobra.Command{
 	Version: Version,
 	Use:     "sshor",
-	Short:   "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Short:   "Tailored SSH",
+	Long: fmt.Sprintf(`To load completions:
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Bash:
+	
+	  $ source <(%[1]s --completion-bash)
+	
+	  # To load completions for each session, execute once:
+	  # Linux:
+	  $ %[1]s --completion-bash > /etc/bash_completion.d/%[1]s
+	  # macOS:
+	  $ %[1]s --completion-bash > $(brew --prefix)/etc/bash_completion.d/%[1]s
+	
+	Zsh:
+	
+	  # If shell completion is not already enabled in your environment,
+	  # you will need to enable it.  You can execute the following once:
+	
+	  $ echo "autoload -U compinit; compinit" >> ~/.zshrc
+	
+	  # To load completions for each session, execute once:
+	  $ %[1]s --completion-zsh > "${fpath[1]}/_%[1]s"
+	
+	  # You will need to start a new shell for this setup to take effect.
+	
+	fish:
+	
+	  $ %[1]s --completion-fish | source
+	
+	  # To load completions for each session, execute once:
+	  $ %[1]s --completion-fish > ~/.config/fish/completions/%[1]s.fish
+	
+	PowerShell:
+	
+	  PS> %[1]s --completion-pwsh | Out-String | Invoke-Expression
+	
+	  # To load completions for every new session, run:
+	  PS> %[1]s --completion-pwsh > %[1]s.ps1
+	  # and source this file from your PowerShell profile.
+	`, "sshor"),
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		//fmt.Printf("debug cmd: %+v\n", cmd)
 		//fmt.Printf("debug args: %+v\n", args)
