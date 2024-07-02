@@ -22,6 +22,8 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+const Version = "0.1.0"
+
 var keepassPathFlag string
 var keepassIdFlag string
 var keepassPwdFlag string
@@ -35,8 +37,9 @@ var completionPwshFlag bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "sshor",
-	Short: "A brief description of your application",
+	Version: Version,
+	Use:     "sshor",
+	Short:   "A brief description of your application",
 	Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
 
@@ -67,7 +70,7 @@ to quickly create a Cobra application.`,
 		} else {
 			config, err := readConf()
 			if err != nil {
-				panic(fmt.Errorf("Cannot read config: %w", err))
+				panic(fmt.Errorf("cannot read config: %w", err))
 			}
 			shell.Shell(getLogin(args, config), getHost(args, config), getPort(args, config), getAuthMethod(args, config))
 		}
@@ -166,14 +169,14 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&loginFlag, "login", "l", "", "SSH login")
 	rootCmd.PersistentFlags().StringVarP(&passwordFlag, "password", "w", "", "SSH password")
 	rootCmd.PersistentFlags().Uint16VarP(&portFlag, "port", "p", 0, "SSH port")
-	rootCmd.PersistentFlags().BoolVar(&completionBashFlag, "completion-bash", false, "Generate completion for bash")
-	rootCmd.PersistentFlags().BoolVar(&completionZshFlag, "completion-zsh", false, "Generate completion for zsh")
-	rootCmd.PersistentFlags().BoolVar(&completionFishFlag, "completion-fish", false, "Generate completion for fish")
-	rootCmd.PersistentFlags().BoolVar(&completionPwshFlag, "completion-pwsh", false, "Generate completion for PowerShell")
+	rootCmd.PersistentFlags().BoolVar(&completionBashFlag, "completion-bash", false, "generate completion for bash")
+	rootCmd.PersistentFlags().BoolVar(&completionZshFlag, "completion-zsh", false, "generate completion for zsh")
+	rootCmd.PersistentFlags().BoolVar(&completionFishFlag, "completion-fish", false, "generate completion for fish")
+	rootCmd.PersistentFlags().BoolVar(&completionPwshFlag, "completion-pwsh", false, "generate completion for PowerShell")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func getFullHost(args []string) string {
