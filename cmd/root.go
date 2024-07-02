@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/hurlebouc/sshor/config"
 	"github.com/hurlebouc/sshor/shell"
@@ -21,7 +20,6 @@ import (
 	"cuelang.org/go/cue/load"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/term"
 )
 
 var keepassPathFlag string
@@ -311,22 +309,12 @@ func getPassword(args []string, config *config.Config) string {
 			panic("Keepass ID access is empty")
 		}
 		if pwd == "" {
-			print("Keepass vault password: ")
-			bytePassword, err := term.ReadPassword(int(syscall.Stdin))
-			if err != nil {
-				panic(err)
-			}
-			pwd = string(bytePassword)
+			pwd = shell.GetPassword("Keepass vault password: ")
 		}
 		return shell.ReadKeepass(path, pwd, id, getLogin(args, config))
 	}
 
-	print("Password: ")
-	bytePassword, err := term.ReadPassword(int(syscall.Stdin))
-	if err != nil {
-		panic(err)
-	}
-	return string(bytePassword)
+	return shell.GetPassword("Password: ")
 }
 
 func getAuthMethod(args []string, config *config.Config) ssh.AuthMethod {

@@ -3,6 +3,7 @@ package shell
 import (
 	"os"
 	"strconv"
+	"syscall"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
@@ -60,4 +61,14 @@ func Shell(login, host string, port uint16, authMethod ssh.AuthMethod) {
 		panic(err)
 	}
 	session.Wait()
+}
+
+func GetPassword(prompt string) string {
+	print(prompt)
+	bytePassword, err := term.ReadPassword(int(syscall.Stdin))
+	println("")
+	if err != nil {
+		panic(err)
+	}
+	return string(bytePassword)
 }
