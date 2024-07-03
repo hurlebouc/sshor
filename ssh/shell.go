@@ -2,15 +2,22 @@ package ssh
 
 import (
 	"os"
-	"syscall"
 
+	"github.com/hurlebouc/sshor/config"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 )
 
-func Shell(login, host string, port uint16, authMethod ssh.AuthMethod) {
+func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 
-	conn := newSshClient(login, host, port, authMethod, nil)
+	var authMethod ssh.AuthMethod
+	if passwordFlag != "" {
+		authMethod = ssh.Password(passwordFlag)
+	} else {
+		authMethod = getAuthMethod(hostConf, keepassPwdFlag)
+	}
+
+	conn := newSshClient(hostConf.User, hostConf.Host, hostConf.Port, authMethod, nil)
 	defer conn.Close()
 	// Create a session
 	session, err := conn.NewSession()
@@ -48,14 +55,4 @@ func Shell(login, host string, port uint16, authMethod ssh.AuthMethod) {
 		panic(err)
 	}
 	session.Wait()
-}
-
-func GetPassword(prompt string) string {
-	print(prompt)
-	bytePassword, err := term.ReadPassword(int(syscall.Stdin))
-	println("")
-	if err != nil {
-		panic(err)
-	}
-	return string(bytePassword)
 }

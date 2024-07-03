@@ -10,10 +10,8 @@ import (
 	"strings"
 
 	"github.com/hurlebouc/sshor/config"
-	"github.com/hurlebouc/sshor/ssh"
 
 	"github.com/spf13/cobra"
-	sshlib "golang.org/x/crypto/ssh"
 )
 
 const Version = "0.1.0"
@@ -146,60 +144,4 @@ func getPort(args []string, config *config.Config) uint16 {
 	}
 
 	return 22
-}
-
-func getPassword(args []string, config *config.Config) string {
-	if passwordFlag != "" {
-		return passwordFlag
-	}
-
-	_, host, _ := splitFullHost(getFullHost(args))
-
-	var path string
-	var pwd string
-	var id string
-
-	if keepassPathFlag != "" {
-		path = keepassPathFlag
-	} else {
-		keepassFromConfig := config.GetHost(host).GetKeepass()
-		if keepassFromConfig != nil {
-			path = *keepassFromConfig
-		}
-	}
-
-	if keepassPwdFlag != "" {
-		pwd = keepassPwdFlag
-	} else {
-		pwdFromConfig := config.GetHost(host).GetKeepassPwd()
-		if pwdFromConfig != nil {
-			pwd = *pwdFromConfig
-		}
-	}
-
-	if keepassIdFlag != "" {
-		id = keepassIdFlag
-	} else {
-		idFromConfig := config.GetHost(host).GetKeepassId()
-		if idFromConfig != nil {
-			id = *idFromConfig
-		}
-	}
-
-	if path != "" {
-		if id == "" {
-			panic("Keepass ID access is empty")
-		}
-		if pwd == "" {
-			pwd = ssh.GetPassword("Keepass vault password: ")
-		}
-		return ssh.ReadKeepass(path, pwd, id, getLogin(args, config))
-	}
-
-	return ssh.GetPassword("Password: ")
-}
-
-func getAuthMethod(args []string, config *config.Config) sshlib.AuthMethod {
-	pwd := getPassword(args, config)
-	return sshlib.Password(pwd)
 }

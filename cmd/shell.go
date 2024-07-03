@@ -30,11 +30,25 @@ var shellCmd = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		config, err := config.ReadConf()
+		configGlobal, err := config.ReadConf()
 		if err != nil {
 			panic(fmt.Errorf("cannot read config: %w", err))
 		}
-		ssh.Shell(getLogin(args, config), getHost(args, config), getPort(args, config), getAuthMethod(args, config))
+		_, hostname, _ := splitFullHost(getFullHost(args))
+		hostConf := configGlobal.GetHost(hostname)
+		if hostConf == nil {
+			hostConf = &config.Host{}
+		}
+		hostConf.User = getLogin(args, configGlobal)
+		hostConf.Host = getHost(args, configGlobal)
+		hostConf.Port = getPort(args, configGlobal)
+		if keepassPathFlag != "" {
+			hostConf.Keepass = keepassPathFlag
+		}
+		if keepassIdFlag != "" {
+			hostConf.KeepassId = keepassIdFlag
+		}
+		ssh.Shell(*hostConf, passwordFlag, keepassPwdFlag)
 	},
 }
 
