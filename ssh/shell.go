@@ -2,7 +2,6 @@ package ssh
 
 import (
 	"os"
-	"strconv"
 	"syscall"
 
 	"golang.org/x/crypto/ssh"
@@ -11,19 +10,7 @@ import (
 
 func Shell(login, host string, port uint16, authMethod ssh.AuthMethod) {
 
-	// Create client config
-	config := &ssh.ClientConfig{
-		User: login,
-		Auth: []ssh.AuthMethod{
-			authMethod,
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-	// Connect to ssh server
-	conn, err := ssh.Dial("tcp", host+":"+strconv.Itoa(int(port)), config)
-	if err != nil {
-		panic(err)
-	}
+	conn := newSshClient(login, host, port, authMethod, nil)
 	defer conn.Close()
 	// Create a session
 	session, err := conn.NewSession()
