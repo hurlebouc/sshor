@@ -45,6 +45,14 @@ func existFile(path string) bool {
 	return !info.IsDir()
 }
 
+func existDir(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return info.IsDir()
+}
+
 func readConf() (*config.Config, error) {
 	ctx := cuecontext.New()
 
@@ -55,18 +63,20 @@ func readConf() (*config.Config, error) {
 
 	path := "sshor.cue"
 	if !existFile(path) {
-		path, err = filepath.Abs(configdir + "/sshor/config.cue")
+		path, err = filepath.Abs(configdir + "/sshor")
 		if err != nil {
 			panic(err)
 		}
-	}
-	if !existFile(path) {
-		return nil, nil
+		if !existDir(path) {
+			return nil, nil
+		}
 	}
 
 	// Load the package "example" from the current directory.
 	// We don't need to specify a config in this example.
-	insts := load.Instances([]string{path}, nil)
+	insts := load.Instances([]string{"."}, &load.Config{
+		Dir: path,
+	})
 
 	// The current directory just has one file without any build tags,
 	// and that file belongs to the example package.
