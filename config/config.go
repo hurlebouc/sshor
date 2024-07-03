@@ -7,6 +7,7 @@ type Host struct {
 	KeepassPwd string `json:"keepassPwd"`
 	KeepassId  string `json:"keepassId"`
 	Port       uint16 `json:"port"`
+	Jumps      []Host `json:"jumps"`
 }
 
 type Config struct {

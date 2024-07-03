@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -30,84 +29,12 @@ var keepassPwdFlag string
 var loginFlag string
 var passwordFlag string
 var portFlag uint16
-var completionBashFlag bool
-var completionZshFlag bool
-var completionFishFlag bool
-var completionPwshFlag bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Version: Version,
 	Use:     "sshor",
 	Short:   "Tailored SSH",
-	Long: fmt.Sprintf(`To load completions:
-
-	Bash:
-	
-	  $ source <(%[1]s --completion-bash)
-	
-	  # To load completions for each session, execute once:
-	  # Linux:
-	  $ %[1]s --completion-bash > /etc/bash_completion.d/%[1]s
-	  # macOS:
-	  $ %[1]s --completion-bash > $(brew --prefix)/etc/bash_completion.d/%[1]s
-	
-	Zsh:
-	
-	  # If shell completion is not already enabled in your environment,
-	  # you will need to enable it.  You can execute the following once:
-	
-	  $ echo "autoload -U compinit; compinit" >> ~/.zshrc
-	
-	  # To load completions for each session, execute once:
-	  $ %[1]s --completion-zsh > "${fpath[1]}/_%[1]s"
-	
-	  # You will need to start a new shell for this setup to take effect.
-	
-	fish:
-	
-	  $ %[1]s --completion-fish | source
-	
-	  # To load completions for each session, execute once:
-	  $ %[1]s --completion-fish > ~/.config/fish/completions/%[1]s.fish
-	
-	PowerShell:
-	
-	  PS> %[1]s --completion-pwsh | Out-String | Invoke-Expression
-	
-	  # To load completions for every new session, run:
-	  PS> %[1]s --completion-pwsh > %[1]s.ps1
-	  # and source this file from your PowerShell profile.
-	`, "sshor"),
-	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		//fmt.Printf("debug cmd: %+v\n", cmd)
-		//fmt.Printf("debug args: %+v\n", args)
-		//fmt.Printf("debug toComplete: %s\n", toComplete)
-		if len(args) == 0 {
-			return findAllPossibleHosts(toComplete), cobra.ShellCompDirectiveDefault
-		} else {
-			return []string{}, cobra.ShellCompDirectiveDefault
-		}
-	},
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	Run: func(cmd *cobra.Command, args []string) {
-		if completionBashFlag {
-			cmd.Root().GenBashCompletionV2(os.Stdout, true)
-		} else if completionZshFlag {
-			cmd.Root().GenZshCompletion(os.Stdout)
-		} else if completionFishFlag {
-			cmd.Root().GenFishCompletion(os.Stdout, true)
-		} else if completionPwshFlag {
-			cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
-		} else {
-			config, err := readConf()
-			if err != nil {
-				panic(fmt.Errorf("cannot read config: %w", err))
-			}
-			shell.Shell(getLogin(args, config), getHost(args, config), getPort(args, config), getAuthMethod(args, config))
-		}
-	},
 }
 
 func existFile(path string) bool {
@@ -209,10 +136,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&loginFlag, "login", "l", "", "SSH login")
 	rootCmd.PersistentFlags().StringVarP(&passwordFlag, "password", "w", "", "SSH password")
 	rootCmd.PersistentFlags().Uint16VarP(&portFlag, "port", "p", 0, "SSH port")
-	rootCmd.PersistentFlags().BoolVar(&completionBashFlag, "completion-bash", false, "generate completion for bash")
-	rootCmd.PersistentFlags().BoolVar(&completionZshFlag, "completion-zsh", false, "generate completion for zsh")
-	rootCmd.PersistentFlags().BoolVar(&completionFishFlag, "completion-fish", false, "generate completion for fish")
-	rootCmd.PersistentFlags().BoolVar(&completionPwshFlag, "completion-pwsh", false, "generate completion for PowerShell")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
