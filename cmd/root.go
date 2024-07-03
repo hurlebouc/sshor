@@ -4,19 +4,14 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"encoding/json"
 	"os"
 	"os/user"
-	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/hurlebouc/sshor/config"
 	"github.com/hurlebouc/sshor/ssh"
-	"github.com/samber/lo"
 
-	"cuelang.org/go/cue/cuecontext"
-	"cuelang.org/go/cue/load"
 	"github.com/spf13/cobra"
 	sshlib "golang.org/x/crypto/ssh"
 )
@@ -35,95 +30,6 @@ var rootCmd = &cobra.Command{
 	Version: Version,
 	Use:     "sshor",
 	Short:   "Tailored SSH",
-}
-
-func existFile(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-	return !info.IsDir()
-}
-
-func existDir(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-	return info.IsDir()
-}
-
-func readConf() (*config.Config, error) {
-	ctx := cuecontext.New()
-
-	configdir, err := os.UserConfigDir()
-	if err != nil {
-		panic(err)
-	}
-
-	path := "."
-	if !existDir(path) {
-		path, err = filepath.Abs(configdir + "/sshor")
-		if err != nil {
-			panic(err)
-		}
-		if !existDir(path) {
-			return nil, nil
-		}
-	}
-
-	// Load the package "example" from the current directory.
-	// We don't need to specify a config in this example.
-	insts := load.Instances([]string{"."}, &load.Config{
-		Dir: path,
-	})
-
-	// The current directory just has one file without any build tags,
-	// and that file belongs to the example package.
-	// So we get a single instance as a result.
-	value := ctx.BuildInstance(insts[0])
-
-	if value.Err() != nil {
-		return nil, value.Err()
-	}
-
-	jsonBytes, err := value.MarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-
-	config := config.Config{}
-	err = json.Unmarshal(jsonBytes, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	return &config, nil
-}
-
-func findAllPossibleHosts(toComplete string) []string {
-	login, host, _ := splitFullHost(toComplete)
-
-	config, err := readConf()
-	if err != nil {
-		panic(err)
-	}
-	if config == nil {
-		return []string{}
-	}
-
-	keys := make([]string, 0, len(config.Hosts))
-	for k := range config.Hosts {
-		keys = append(keys, k)
-	}
-
-	return lo.Map(lo.Filter(keys, func(item string, idx int) bool { return strings.HasPrefix(item, host) }), func(item string, idx int) string {
-		if login == nil {
-			return item
-		} else {
-			return *login + "@" + item
-		}
-	})
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

@@ -5,8 +5,11 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/hurlebouc/sshor/config"
 	"github.com/hurlebouc/sshor/ssh"
+	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +30,7 @@ var shellCmd = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		config, err := readConf()
+		config, err := config.ReadConf()
 		if err != nil {
 			panic(fmt.Errorf("cannot read config: %w", err))
 		}
@@ -47,4 +50,29 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// shellCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func findAllPossibleHosts(toComplete string) []string {
+	login, host, _ := splitFullHost(toComplete)
+
+	config, err := config.ReadConf()
+	if err != nil {
+		panic(err)
+	}
+	if config == nil {
+		return []string{}
+	}
+
+	keys := make([]string, 0, len(config.Hosts))
+	for k := range config.Hosts {
+		keys = append(keys, k)
+	}
+
+	return lo.Map(lo.Filter(keys, func(item string, idx int) bool { return strings.HasPrefix(item, host) }), func(item string, idx int) string {
+		if login == nil {
+			return item
+		} else {
+			return *login + "@" + item
+		}
+	})
 }
