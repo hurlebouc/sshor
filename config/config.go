@@ -7,7 +7,7 @@ type Host struct {
 	KeepassPwd string `json:"keepassPwd"`
 	KeepassId  string `json:"keepassId"`
 	Port       uint16 `json:"port"`
-	Jumps      []Host `json:"jumps"`
+	Jump       *Host  `json:"jumps"`
 }
 
 type Config struct {
@@ -84,4 +84,11 @@ func (h *Host) GetPort() *uint16 {
 		return nil
 	}
 	return &h.Port
+}
+
+func (h *Host) GetJump() *Host {
+	if h == nil {
+		return nil
+	}
+	return h.Jump
 }

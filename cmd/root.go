@@ -61,8 +61,8 @@ func readConf() (*config.Config, error) {
 		panic(err)
 	}
 
-	path := "sshor.cue"
-	if !existFile(path) {
+	path := "."
+	if !existDir(path) {
 		path, err = filepath.Abs(configdir + "/sshor")
 		if err != nil {
 			panic(err)
