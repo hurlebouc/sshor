@@ -2,7 +2,8 @@ package sshor
 
 _machine1: {
 	plop: {
-		ip: "1.2.3.4"
+		ip:   "1.2.3.4"
+		jump: plip
 	}
 	plip: {
 		ip: "2.3.4.5"
