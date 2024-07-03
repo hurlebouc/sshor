@@ -2,6 +2,8 @@ package ssh
 
 import (
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
@@ -17,14 +19,24 @@ func NewSftp(conn *ssh.Client) *sftp.Client {
 	return client
 }
 
-func CopyToRemote(client *sftp.Client, src, dst string) {
+func CopyFileToRemote(client *sftp.Client, src, dst string) {
+
+	err := client.MkdirAll(filepath.Dir(dst))
+	if err != nil {
+		panic(err)
+	}
 
 	f, err := client.Create(dst)
 	if err != nil {
 		panic(err)
 	}
 
-	//f.ReadFrom(srcReader)
+	srcReader, err := os.Open(src)
+	if err != nil {
+		panic(err)
+	}
+
+	f.ReadFrom(srcReader)
 
 	if _, err := f.Write([]byte("Hello world!")); err != nil {
 		log.Fatal(err)
