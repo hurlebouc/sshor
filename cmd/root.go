@@ -12,13 +12,13 @@ import (
 	"strings"
 
 	"github.com/hurlebouc/sshor/config"
-	"github.com/hurlebouc/sshor/shell"
+	"github.com/hurlebouc/sshor/ssh"
 	"github.com/samber/lo"
 
 	"cuelang.org/go/cue/cuecontext"
 	"cuelang.org/go/cue/load"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh"
+	sshlib "golang.org/x/crypto/ssh"
 )
 
 const Version = "0.1.0"
@@ -275,15 +275,15 @@ func getPassword(args []string, config *config.Config) string {
 			panic("Keepass ID access is empty")
 		}
 		if pwd == "" {
-			pwd = shell.GetPassword("Keepass vault password: ")
+			pwd = ssh.GetPassword("Keepass vault password: ")
 		}
-		return shell.ReadKeepass(path, pwd, id, getLogin(args, config))
+		return ssh.ReadKeepass(path, pwd, id, getLogin(args, config))
 	}
 
-	return shell.GetPassword("Password: ")
+	return ssh.GetPassword("Password: ")
 }
 
-func getAuthMethod(args []string, config *config.Config) ssh.AuthMethod {
+func getAuthMethod(args []string, config *config.Config) sshlib.AuthMethod {
 	pwd := getPassword(args, config)
-	return ssh.Password(pwd)
+	return sshlib.Password(pwd)
 }

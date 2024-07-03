@@ -6,7 +6,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/hurlebouc/sshor/shell"
+	"github.com/hurlebouc/sshor/ssh"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +31,7 @@ var shellCmd = &cobra.Command{
 		if err != nil {
 			panic(fmt.Errorf("cannot read config: %w", err))
 		}
-		shell.Shell(getLogin(args, config), getHost(args, config), getPort(args, config), getAuthMethod(args, config))
+		ssh.Shell(getLogin(args, config), getHost(args, config), getPort(args, config), getAuthMethod(args, config))
 	},
 }
 
