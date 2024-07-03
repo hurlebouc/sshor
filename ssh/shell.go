@@ -17,7 +17,7 @@ func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 		authMethod = getAuthMethod(hostConf, keepassPwdFlag)
 	}
 
-	conn := newSshClient(hostConf.User, hostConf.Host, hostConf.Port, authMethod, nil)
+	conn := newSshClient(hostConf, authMethod)
 	defer conn.Close()
 	// Create a session
 	session, err := conn.NewSession()

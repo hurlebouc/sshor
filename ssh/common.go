@@ -44,17 +44,17 @@ func getAuthMethod(config config.Host, keepassPwdFlag string) ssh.AuthMethod {
 	return ssh.Password(pwd)
 }
 
-func newSshClient(login, host string, port uint16, authMethod ssh.AuthMethod, jumpHost *config.Host) *ssh.Client {
+func newSshClient(hostConfig config.Host, authMethod ssh.AuthMethod) *ssh.Client {
 	// Create client config
 	clientConfig := &ssh.ClientConfig{
-		User: login,
+		User: hostConfig.User,
 		Auth: []ssh.AuthMethod{
 			authMethod,
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	// Connect to ssh server
-	conn, err := ssh.Dial("tcp", host+":"+strconv.Itoa(int(port)), clientConfig)
+	conn, err := ssh.Dial("tcp", hostConfig.Host+":"+strconv.Itoa(int(hostConfig.Port)), clientConfig)
 	if err != nil {
 		panic(err)
 	}
