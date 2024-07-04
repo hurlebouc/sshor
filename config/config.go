@@ -75,6 +75,15 @@ func (h *Host) GetPort() *uint16 {
 	return &h.Port
 }
 
+func (h Host) GetPortOrDefault(v uint16) uint16 {
+	port := h.GetPort()
+	if port == nil {
+		return v
+	} else {
+		return *port
+	}
+}
+
 func (h *Host) GetJump() *Host {
 	if h == nil {
 		return nil

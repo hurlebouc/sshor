@@ -9,18 +9,15 @@ import (
 )
 
 func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
-
-	var authMethod ssh.AuthMethod
-	if passwordFlag != "" {
-		authMethod = ssh.Password(passwordFlag)
-	} else {
-		authMethod = getAuthMethod(hostConf, keepassPwdFlag)
+	keepassPwdMap := map[string]string{}
+	if hostConf.GetKeepass() != nil && keepassPwdFlag != "" {
+		keepassPwdMap[*hostConf.GetKeepass()] = keepassPwdFlag
 	}
 
-	conn := newSshClient(hostConf, authMethod)
+	conn := newSshClient(hostConf, passwordFlag, keepassPwdMap)
 	defer conn.Close()
 	// Create a session
-	session, err := conn.NewSession()
+	session, err := conn.client.NewSession()
 	if err != nil {
 		panic(err)
 	}

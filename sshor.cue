@@ -2,7 +2,7 @@ package sshor
 
 _machine1: {
 	plop: {
-		ip:   "1.2.3.4"
+		host: "1.2.3.4"
 		jump: plip
 	}
 	plip: {
@@ -13,6 +13,15 @@ _machine1: {
 _machine2: {
 	plap: {
 		ip: "8.8.8.8"
+	}
+	local: {
+		host: "192.168.1.2"
+		user: "partage"
+	}
+	testjump: {
+		host: "127.0.0.1"
+		user: "partage"
+		jump: local
 	}
 }
 
@@ -27,6 +36,5 @@ hosts: {
 hosts: {
 	for k, v in _machine2 {
 		(k): v
-		(k): {aaaa: v.ip}
 	}
 }

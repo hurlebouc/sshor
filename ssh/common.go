@@ -2,7 +2,6 @@ package ssh
 
 import (
 	"fmt"
-	"strconv"
 	"syscall"
 
 	"github.com/hurlebouc/sshor/config"
@@ -20,43 +19,89 @@ func readPassword(prompt string) string {
 	return string(bytePassword)
 }
 
-func getPassword(config config.Host, keepassPwdFlag string) string {
+func getPassword(config config.Host, keepassPwdMap map[string]string) string {
 
-	path := config.Keepass
-	pwd := keepassPwdFlag
-	id := config.KeepassId
+	path := config.GetKeepass()
+	id := config.GetKeepassId()
 
-	if path != "" {
-		if id == "" {
+	if path != nil {
+		if id == nil {
 			panic("Keepass ID access is empty")
 		}
-		if pwd == "" {
-			pwd = readPassword(fmt.Sprintf("Password for %s: ", path))
+		pwd, present := keepassPwdMap[*path]
+		if !present {
+			pwd = readPassword(fmt.Sprintf("Password for %s: ", *path))
+			keepassPwdMap[*path] = pwd
 		}
-		return ReadKeepass(path, pwd, id, config.User)
+		return ReadKeepass(*path, pwd, *id, config.User)
 	}
 
-	return readPassword(fmt.Sprintf("Password for %s@%s:%v: ", config.User, config.Host, config.Port))
+	return readPassword(fmt.Sprintf("Password for %s@%s:%d: ", *config.GetUser(), *config.GetHost(), config.GetPortOrDefault(22)))
 }
 
-func getAuthMethod(config config.Host, keepassPwdFlag string) ssh.AuthMethod {
-	pwd := getPassword(config, keepassPwdFlag)
+func getAuthMethod(config config.Host, keepassPwdMap map[string]string) ssh.AuthMethod {
+	pwd := getPassword(config, keepassPwdMap)
 	return ssh.Password(pwd)
 }
 
-func newSshClient(hostConfig config.Host, authMethod ssh.AuthMethod) *ssh.Client {
-	// Create client config
+type SshClient struct {
+	client *ssh.Client
+	jump   *SshClient
+}
+
+func (c SshClient) Close() {
+	c.client.Close()
+	if c.jump != nil {
+		c.jump.Close()
+	}
+}
+
+func newSshClientConfig(hostConfig config.Host, passwordFlag string, keepassPwdMap map[string]string) *ssh.ClientConfig {
+	var authMethod ssh.AuthMethod
+	if passwordFlag != "" {
+		authMethod = ssh.Password(passwordFlag)
+	} else {
+		authMethod = getAuthMethod(hostConfig, keepassPwdMap)
+	}
+
 	clientConfig := &ssh.ClientConfig{
-		User: hostConfig.User,
+		User: *hostConfig.GetUser(),
 		Auth: []ssh.AuthMethod{
 			authMethod,
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
+	return clientConfig
+}
+
+func newSshClient(hostConfig config.Host, passwordFlag string, keepassPwdMap map[string]string) SshClient {
+	if hostConfig.GetJump() != nil {
+		jumpHost := *hostConfig.GetJump()
+		jumpClient := newSshClient(jumpHost, "", keepassPwdMap)
+		conn, err := jumpClient.client.Dial("tcp", fmt.Sprintf("%s:%d", *hostConfig.GetHost(), hostConfig.GetPortOrDefault(22)))
+		if err != nil {
+			panic(err)
+		}
+		clientConfig := newSshClientConfig(hostConfig, passwordFlag, keepassPwdMap)
+		ncc, chans, reqs, err := ssh.NewClientConn(conn, *hostConfig.GetHost(), clientConfig)
+		if err != nil {
+			panic(err)
+		}
+		sClient := ssh.NewClient(ncc, chans, reqs)
+		return SshClient{
+			client: sClient,
+			jump:   &jumpClient,
+		}
+	}
+
+	clientConfig := newSshClientConfig(hostConfig, passwordFlag, keepassPwdMap)
 	// Connect to ssh server
-	conn, err := ssh.Dial("tcp", hostConfig.Host+":"+strconv.Itoa(int(hostConfig.Port)), clientConfig)
+	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", *hostConfig.GetHost(), hostConfig.GetPortOrDefault(22)), clientConfig)
 	if err != nil {
 		panic(err)
 	}
-	return conn
+	return SshClient{
+		client: conn,
+		jump:   nil,
+	}
 }
