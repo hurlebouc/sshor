@@ -1,12 +1,12 @@
 package config
 
 type Host struct {
-	Host      string `json:"host"`
-	User      string `json:"user"`
-	Keepass   string `json:"keepass"`
-	KeepassId string `json:"keepassId"`
-	Port      uint16 `json:"port"`
-	Jump      *Host  `json:"jump"`
+	Host      string  `json:"host"`
+	User      *string `json:"user"`
+	Keepass   *string `json:"keepass"`
+	KeepassId *string `json:"keepassId"`
+	Port      *uint16 `json:"port"`
+	Jump      *Host   `json:"jump"`
 }
 
 type Config struct {
@@ -29,37 +29,25 @@ func (h *Host) GetKeepass() *string {
 	if h == nil {
 		return nil
 	}
-	if h.Keepass == "" {
-		return nil
-	}
-	return &h.Keepass
+	return h.Keepass
 }
 
 func (h *Host) GetKeepassId() *string {
 	if h == nil {
 		return nil
 	}
-	if h.KeepassId == "" {
-		return nil
-	}
-	return &h.KeepassId
+	return h.KeepassId
 }
 
 func (h *Host) GetUser() *string {
 	if h == nil {
 		return nil
 	}
-	if h.User == "" {
-		return nil
-	}
-	return &h.User
+	return h.User
 }
 
 func (h *Host) GetHost() *string {
 	if h == nil {
-		return nil
-	}
-	if h.Host == "" {
 		return nil
 	}
 	return &h.Host
@@ -69,10 +57,7 @@ func (h *Host) GetPort() *uint16 {
 	if h == nil {
 		return nil
 	}
-	if h.Port == 0 {
-		return nil
-	}
-	return &h.Port
+	return h.Port
 }
 
 func (h Host) GetPortOrDefault(v uint16) uint16 {

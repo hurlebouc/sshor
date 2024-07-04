@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"os"
-	"os/user"
 	"strconv"
 	"strings"
 
@@ -96,52 +95,12 @@ func splitFullHost(fullHost string) (*string, string, *uint16) {
 	return login, host, port
 }
 
-func getLogin(args []string, config *config.Config) string {
-	if loginFlag != "" {
-		return loginFlag
-	}
-	loginFromHost, host, _ := splitFullHost(getFullHost(args))
-	if loginFromHost != nil {
-		return *loginFromHost
-	}
-
-	loginFromConfig := config.GetHost(host).GetUser()
-	if loginFromConfig != nil {
-		return *loginFromConfig
-	}
-
-	currentUser, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	return currentUser.Username
-
-}
-
 func getHost(args []string, config *config.Config) string {
 	_, host, _ := splitFullHost(getFullHost(args))
 
-	hostFromConfig := config.GetHost(host).GetHost()
-	if hostFromConfig != nil {
-		return *hostFromConfig
+	if config.GetHost(host) == nil {
+		return host
 	}
 
-	return host
-}
-
-func getPort(args []string, config *config.Config) uint16 {
-	if portFlag != 0 {
-		return uint16(portFlag)
-	}
-	_, host, portFromHost := splitFullHost(getFullHost(args))
-	if portFromHost != nil {
-		return *portFromHost
-	}
-
-	portFromConfig := config.GetHost(host).GetPort()
-	if portFromConfig != nil {
-		return *portFromConfig
-	}
-
-	return 22
+	return config.GetHost(host).Host
 }

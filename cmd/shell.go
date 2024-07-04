@@ -34,19 +34,23 @@ var shellCmd = &cobra.Command{
 		if err != nil {
 			panic(fmt.Errorf("cannot read config: %w", err))
 		}
-		_, hostname, _ := splitFullHost(getFullHost(args))
+		login, hostname, port := splitFullHost(getFullHost(args))
 		hostConf := configGlobal.GetHost(hostname)
 		if hostConf == nil {
 			hostConf = &config.Host{}
 		}
-		hostConf.User = getLogin(args, configGlobal)
+		if login != nil {
+			hostConf.User = login
+		}
 		hostConf.Host = getHost(args, configGlobal)
-		hostConf.Port = getPort(args, configGlobal)
+		if port != nil {
+			hostConf.Port = port
+		}
 		if keepassPathFlag != "" {
-			hostConf.Keepass = keepassPathFlag
+			hostConf.Keepass = &keepassPathFlag
 		}
 		if keepassIdFlag != "" {
-			hostConf.KeepassId = keepassIdFlag
+			hostConf.KeepassId = &keepassIdFlag
 		}
 		ssh.Shell(*hostConf, passwordFlag, keepassPwdFlag)
 	},

@@ -1,7 +1,9 @@
 package ssh
 
 import (
+	"context"
 	"os"
+	"os/user"
 
 	"github.com/hurlebouc/sshor/config"
 	"golang.org/x/crypto/ssh"
@@ -14,7 +16,14 @@ func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 		keepassPwdMap[*hostConf.GetKeepass()] = keepassPwdFlag
 	}
 
-	conn := newSshClient(hostConf, passwordFlag, keepassPwdMap)
+	currentUser, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+
+	ctx := context.WithValue(context.Background(), CURRENT_USER, currentUser.Username)
+
+	conn, _ := newSshClient(ctx, hostConf, passwordFlag, keepassPwdMap)
 	defer conn.Close()
 	// Create a session
 	session, err := conn.client.NewSession()
