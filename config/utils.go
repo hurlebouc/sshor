@@ -9,20 +9,24 @@ import (
 	"cuelang.org/go/cue/load"
 )
 
-func existFile(path string) bool {
+func existCuePackage(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil {
 		return false
 	}
-	return !info.IsDir()
-}
-
-func existDir(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil {
+	if !info.IsDir() {
 		return false
 	}
-	return info.IsDir()
+	files, err := os.ReadDir(path)
+	if err != nil {
+		panic(err)
+	}
+	for _, file := range files {
+		if filepath.Ext(file.Name()) == ".cue" {
+			return true
+		}
+	}
+	return false
 }
 
 func ReadConf() (*Config, error) {
@@ -34,12 +38,12 @@ func ReadConf() (*Config, error) {
 	}
 
 	path := "."
-	if !existDir(path) {
+	if !existCuePackage(path) {
 		path, err = filepath.Abs(configdir + "/sshor")
 		if err != nil {
 			panic(err)
 		}
-		if !existDir(path) {
+		if !existCuePackage(path) {
 			return nil, nil
 		}
 	}
