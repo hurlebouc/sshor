@@ -14,14 +14,14 @@ _machine2: {
 	plap: {
 		ip: "8.8.8.8"
 	}
-	local: {
+	kiwi: {
 		host: "192.168.1.2"
 		user: "partage"
 	}
 	testjump: {
 		host: "127.0.0.1"
 		user: "partage"
-		jump: local
+		jump: kiwi
 	}
 }
 
