@@ -95,11 +95,11 @@ func splitFullHost(fullHost string) (*string, string, *uint16) {
 	return login, host, port
 }
 
-func getHost(args []string, config *config.Config) string {
+func getHost(args []string, config *config.Config) *string {
 	_, host, _ := splitFullHost(getFullHost(args))
 
 	if config.GetHost(host) == nil {
-		return host
+		return &host
 	}
 
 	return config.GetHost(host).Host

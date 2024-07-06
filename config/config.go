@@ -1,7 +1,7 @@
 package config
 
 type Host struct {
-	Host      string  `json:"host"`
+	Host      *string `json:"host"`
 	User      *string `json:"user"`
 	Keepass   *string `json:"keepass"`
 	KeepassId *string `json:"keepassId"`
@@ -50,7 +50,7 @@ func (h *Host) GetHost() *string {
 	if h == nil {
 		return nil
 	}
-	return &h.Host
+	return h.Host
 }
 
 func (h *Host) GetPort() *uint16 {

@@ -46,8 +46,12 @@ func getPassword(user string, config config.Host, keepassPwdMap map[string]strin
 		}
 		return ReadKeepass(*path, pwd, *id, user)
 	}
-
-	return readPassword(fmt.Sprintf("Password for %s@%s:%d: ", user, *config.GetHost(), config.GetPortOrDefault(22)))
+	host, port := getHostPort(config)
+	if host == nil {
+		return readPassword(fmt.Sprintf("Password for %s ", user))
+	} else {
+		return readPassword(fmt.Sprintf("Password for %s@%s:%d: ", user, *host, port))
+	}
 }
 
 func getAuthMethod(user string, config config.Host, keepassPwdMap map[string]string) ssh.AuthMethod {
@@ -57,11 +61,17 @@ func getAuthMethod(user string, config config.Host, keepassPwdMap map[string]str
 
 type SshClient struct {
 	client *ssh.Client
-	jump   *SshClient
+	a      *struct {
+		login    string
+		password string
+	}
+	jump *SshClient
 }
 
 func (c SshClient) Close() {
-	c.client.Close()
+	if c.client != nil {
+		c.client.Close()
+	}
 	if c.jump != nil {
 		c.jump.Close()
 	}
@@ -99,30 +109,80 @@ func newSshClient(ctx context.Context, hostConfig config.Host, passwordFlag stri
 	if hostConfig.GetJump() != nil {
 		jumpHost := *hostConfig.GetJump()
 		jumpClient, newctx := newSshClient(ctx, jumpHost, "", keepassPwdMap)
-		conn, err := jumpClient.client.Dial("tcp", fmt.Sprintf("%s:%d", *hostConfig.GetHost(), hostConfig.GetPortOrDefault(22)))
+		if jumpClient.client != nil {
+			if hostConfig.GetHost() != nil {
+				conn, err := jumpClient.client.Dial("tcp", fmt.Sprintf("%s:%d", *hostConfig.GetHost(), hostConfig.GetPortOrDefault(22)))
+				if err != nil {
+					panic(err)
+				}
+				clientConfig, newctx := newSshClientConfig(newctx, hostConfig, passwordFlag, keepassPwdMap)
+				ncc, chans, reqs, err := ssh.NewClientConn(conn, *hostConfig.GetHost(), clientConfig)
+				if err != nil {
+					panic(err)
+				}
+				sClient := ssh.NewClient(ncc, chans, reqs)
+				return SshClient{
+					client: sClient,
+					a:      nil,
+					jump:   &jumpClient,
+				}, newctx
+			} else {
+				login, newctx := getUser(newctx, hostConfig)
+				password := getPassword(login, hostConfig, keepassPwdMap)
+				return SshClient{
+					client: nil,
+					jump:   nil,
+					a: &struct {
+						login    string
+						password string
+					}{
+						login:    login,
+						password: password,
+					},
+				}, newctx
+			}
+		} else {
+			panic("Refaire une connexion SSH à partir de la dernière connexion ssh mais avec le contexte de l'utilisateur courant")
+		}
+	} else if hostConfig.GetHost() != nil {
+		clientConfig, newctx := newSshClientConfig(ctx, hostConfig, passwordFlag, keepassPwdMap)
+		// Connect to ssh server
+		conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", *hostConfig.GetHost(), hostConfig.GetPortOrDefault(22)), clientConfig)
 		if err != nil {
 			panic(err)
 		}
-		clientConfig, newctx := newSshClientConfig(newctx, hostConfig, passwordFlag, keepassPwdMap)
-		ncc, chans, reqs, err := ssh.NewClientConn(conn, *hostConfig.GetHost(), clientConfig)
-		if err != nil {
-			panic(err)
-		}
-		sClient := ssh.NewClient(ncc, chans, reqs)
 		return SshClient{
-			client: sClient,
-			jump:   &jumpClient,
+			client: conn,
+			a:      nil,
+			jump:   nil,
+		}, newctx
+	} else { // pas de ssh, on fait juste un changement d'utilisateur sur la machine locale
+		login, newctx := getUser(ctx, hostConfig)
+		password := getPassword(login, hostConfig, keepassPwdMap)
+		return SshClient{
+			client: nil,
+			jump:   nil,
+			a: &struct {
+				login    string
+				password string
+			}{
+				login:    login,
+				password: password,
+			},
 		}, newctx
 	}
+}
 
-	clientConfig, newctx := newSshClientConfig(ctx, hostConfig, passwordFlag, keepassPwdMap)
-	// Connect to ssh server
-	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", *hostConfig.GetHost(), hostConfig.GetPortOrDefault(22)), clientConfig)
-	if err != nil {
-		panic(err)
+func getHostPort(config config.Host) (*string, uint16) {
+	if config.Host != nil {
+		if config.Port == nil {
+			return config.Host, 22
+		} else {
+			return config.Host, *config.Port
+		}
 	}
-	return SshClient{
-		client: conn,
-		jump:   nil,
-	}, newctx
+	if config.Jump != nil {
+		return getHostPort(*config.Jump)
+	}
+	return nil, 22
 }

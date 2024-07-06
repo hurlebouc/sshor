@@ -89,7 +89,6 @@ func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 	go func() {
 		input.Write([]byte("su - testuser\n"))
 		b := <-cha
-		//time.Sleep(1 * time.Second)
 		if b {
 			input.Write([]byte("testuser\n"))
 		}
