@@ -131,7 +131,7 @@ func newSshClient(ctx context.Context, hostConfig config.Host, passwordFlag stri
 				password := getPassword(login, hostConfig, keepassPwdMap)
 				return SshClient{
 					client: nil,
-					jump:   nil,
+					jump:   &jumpClient,
 					a: &struct {
 						login    string
 						password string
