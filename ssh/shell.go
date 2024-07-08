@@ -133,7 +133,7 @@ func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 			}
 			if !passed {
 				p.addBytes(buffer[0:n])
-				if bytes.Contains(p.exportBytes(), []byte("Mot de passe : ")) {
+				if waitPassword(p) {
 					cha <- true
 					passed = true
 				}
@@ -150,4 +150,8 @@ func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 		panic(err)
 	}
 	session.Wait()
+}
+
+func waitPassword(p PatternDetector) bool {
+	return bytes.Contains(p.exportBytes(), []byte("Mot de passe : ")) || bytes.Contains(p.exportBytes(), []byte("Password: "))
 }
