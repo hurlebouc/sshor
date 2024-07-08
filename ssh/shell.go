@@ -3,6 +3,7 @@ package ssh
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"os/user"
 
@@ -47,7 +48,11 @@ func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 	conn, _ := newSshClient(ctx, hostConf, passwordFlag, keepassPwdMap)
 	defer conn.Close()
 	// Create a session
-	session, err := conn.client.NewSession()
+	sshClient := GetFirstNonNilSshClient(conn)
+	if sshClient == nil {
+		panic("todo")
+	}
+	session, err := sshClient.NewSession()
 	if err != nil {
 		panic(err)
 	}
@@ -87,10 +92,14 @@ func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 	session.Stderr = os.Stderr
 
 	go func() {
-		input.Write([]byte("su - testuser\n"))
-		b := <-cha
-		if b {
-			input.Write([]byte("testuser\n"))
+		if conn.a != nil {
+			// se connecte uniquement avec le dernier utilisateur
+			_, err := input.Write([]byte(fmt.Sprintf("su - %s\n", conn.a.login)))
+			if err != nil {
+				panic(err)
+			}
+			<-cha
+			input.Write([]byte(fmt.Sprintf("%s\n", conn.a.password)))
 		}
 		buffer := make([]byte, 5)
 		for {
@@ -113,7 +122,7 @@ func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 		p := PatternDetector{
 			buffer: make([]byte, 100),
 		}
-		passed := false
+		passed := conn.a == nil
 		for {
 			n, err := output.Read(buffer)
 			if n == 0 {

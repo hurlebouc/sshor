@@ -129,7 +129,10 @@ func newSshClient(ctx context.Context, hostConfig config.Host, passwordFlag stri
 		}, ctx
 	}
 
-	longJumpSshClient := getLongJumpSshClient(jumpClient)
+	var longJumpSshClient *ssh.Client = nil
+	if jumpClient != nil {
+		longJumpSshClient = GetFirstNonNilSshClient(*jumpClient)
+	}
 
 	if longJumpSshClient != nil {
 		conn, err := longJumpSshClient.Dial("tcp", fmt.Sprintf("%s:%d", *hostConfig.GetHost(), hostConfig.GetPortOrDefault(22)))
@@ -162,17 +165,11 @@ func newSshClient(ctx context.Context, hostConfig config.Host, passwordFlag stri
 	}
 }
 
-func getLongJumpSshClient(jumpClient *SshClient) *ssh.Client {
-	if jumpClient == nil {
-		return nil
-	}
-	if jumpClient.client != nil {
+func GetFirstNonNilSshClient(jumpClient SshClient) *ssh.Client {
+	if jumpClient.client != nil || jumpClient.jump == nil {
 		return jumpClient.client
 	}
-	if jumpClient.jump == nil {
-		return jumpClient.client
-	}
-	return getLongJumpSshClient(jumpClient.jump)
+	return GetFirstNonNilSshClient(*jumpClient.jump)
 }
 
 func getHostPort(config config.Host) (*string, uint16) {
