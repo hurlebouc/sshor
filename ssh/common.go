@@ -106,46 +106,49 @@ func newSshClientConfig(ctx context.Context, hostConfig config.Host, passwordFla
 }
 
 func newSshClient(ctx context.Context, hostConfig config.Host, passwordFlag string, keepassPwdMap map[string]string) (SshClient, context.Context) {
+	var jumpClient *SshClient = nil
 	if hostConfig.GetJump() != nil {
 		jumpHost := *hostConfig.GetJump()
-		jumpClient, newctx := newSshClient(ctx, jumpHost, "", keepassPwdMap)
-		if jumpClient.client != nil {
-			if hostConfig.GetHost() != nil {
-				conn, err := jumpClient.client.Dial("tcp", fmt.Sprintf("%s:%d", *hostConfig.GetHost(), hostConfig.GetPortOrDefault(22)))
-				if err != nil {
-					panic(err)
-				}
-				clientConfig, newctx := newSshClientConfig(newctx, hostConfig, passwordFlag, keepassPwdMap)
-				ncc, chans, reqs, err := ssh.NewClientConn(conn, *hostConfig.GetHost(), clientConfig)
-				if err != nil {
-					panic(err)
-				}
-				sClient := ssh.NewClient(ncc, chans, reqs)
-				return SshClient{
-					client: sClient,
-					a:      nil,
-					jump:   &jumpClient,
-				}, newctx
-			} else {
-				login, newctx := getUser(newctx, hostConfig)
-				password := getPassword(login, hostConfig, keepassPwdMap)
-				return SshClient{
-					client: nil,
-					jump:   &jumpClient,
-					a: &struct {
-						login    string
-						password string
-					}{
-						login:    login,
-						password: password,
-					},
-				}, newctx
-			}
-		} else {
-			panic("Refaire une connexion SSH à partir de la dernière connexion ssh mais avec le contexte de l'utilisateur courant")
+		jumpClients, nctx := newSshClient(ctx, jumpHost, "", keepassPwdMap)
+		jumpClient = &jumpClients
+		ctx = nctx
+	}
+	if hostConfig.GetHost() == nil {
+		login, ctx := getUser(ctx, hostConfig)
+		password := getPassword(login, hostConfig, keepassPwdMap)
+		return SshClient{
+			client: nil,
+			jump:   jumpClient,
+			a: &struct {
+				login    string
+				password string
+			}{
+				login:    login,
+				password: password,
+			},
+		}, ctx
+	}
+
+	longJumpSshClient := getLongJumpSshClient(jumpClient)
+
+	if longJumpSshClient != nil {
+		conn, err := longJumpSshClient.Dial("tcp", fmt.Sprintf("%s:%d", *hostConfig.GetHost(), hostConfig.GetPortOrDefault(22)))
+		if err != nil {
+			panic(err)
 		}
-	} else if hostConfig.GetHost() != nil {
-		clientConfig, newctx := newSshClientConfig(ctx, hostConfig, passwordFlag, keepassPwdMap)
+		clientConfig, ctx := newSshClientConfig(ctx, hostConfig, passwordFlag, keepassPwdMap)
+		ncc, chans, reqs, err := ssh.NewClientConn(conn, *hostConfig.GetHost(), clientConfig)
+		if err != nil {
+			panic(err)
+		}
+		sClient := ssh.NewClient(ncc, chans, reqs)
+		return SshClient{
+			client: sClient,
+			a:      nil,
+			jump:   jumpClient,
+		}, ctx
+	} else {
+		clientConfig, ctx := newSshClientConfig(ctx, hostConfig, passwordFlag, keepassPwdMap)
 		// Connect to ssh server
 		conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", *hostConfig.GetHost(), hostConfig.GetPortOrDefault(22)), clientConfig)
 		if err != nil {
@@ -154,23 +157,22 @@ func newSshClient(ctx context.Context, hostConfig config.Host, passwordFlag stri
 		return SshClient{
 			client: conn,
 			a:      nil,
-			jump:   nil,
-		}, newctx
-	} else { // pas de ssh, on fait juste un changement d'utilisateur sur la machine locale
-		login, newctx := getUser(ctx, hostConfig)
-		password := getPassword(login, hostConfig, keepassPwdMap)
-		return SshClient{
-			client: nil,
-			jump:   nil,
-			a: &struct {
-				login    string
-				password string
-			}{
-				login:    login,
-				password: password,
-			},
-		}, newctx
+			jump:   jumpClient,
+		}, ctx
 	}
+}
+
+func getLongJumpSshClient(jumpClient *SshClient) *ssh.Client {
+	if jumpClient == nil {
+		return nil
+	}
+	if jumpClient.client != nil {
+		return jumpClient.client
+	}
+	if jumpClient.jump == nil {
+		return jumpClient.client
+	}
+	return getLongJumpSshClient(jumpClient.jump)
 }
 
 func getHostPort(config config.Host) (*string, uint16) {
