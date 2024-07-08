@@ -35,7 +35,7 @@ func (p PatternDetector) exportBytes() []byte {
 func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 	keepassPwdMap := map[string]string{}
 	if hostConf.GetKeepass() != nil && keepassPwdFlag != "" {
-		keepassPwdMap[*hostConf.GetKeepass()] = keepassPwdFlag
+		keepassPwdMap[hostConf.GetKeepass().Path] = keepassPwdFlag
 	}
 
 	currentUser, err := user.Current()

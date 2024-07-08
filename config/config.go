@@ -1,12 +1,16 @@
 package config
 
+type Keepass struct {
+	Path string `json:"path"`
+	Id   string `json:"id"`
+}
+
 type Host struct {
-	Host      *string `json:"host"`
-	User      *string `json:"user"`
-	Keepass   *string `json:"keepass"`
-	KeepassId *string `json:"keepassId"`
-	Port      *uint16 `json:"port"`
-	Jump      *Host   `json:"jump"`
+	Host    *string  `json:"host"`
+	User    *string  `json:"user"`
+	Keepass *Keepass `json:"keepass"`
+	Port    *uint16  `json:"port"`
+	Jump    *Host    `json:"jump"`
 }
 
 type Config struct {
@@ -25,18 +29,11 @@ func (c *Config) GetHost(host string) *Host {
 	return nil
 }
 
-func (h *Host) GetKeepass() *string {
+func (h *Host) GetKeepass() *Keepass {
 	if h == nil {
 		return nil
 	}
 	return h.Keepass
-}
-
-func (h *Host) GetKeepassId() *string {
-	if h == nil {
-		return nil
-	}
-	return h.KeepassId
 }
 
 func (h *Host) GetUser() *string {

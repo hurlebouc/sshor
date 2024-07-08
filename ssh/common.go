@@ -32,19 +32,16 @@ func readPassword(prompt string) string {
 
 func getPassword(user string, config config.Host, keepassPwdMap map[string]string) string {
 
-	path := config.GetKeepass()
-	id := config.GetKeepassId()
-
-	if path != nil {
-		if id == nil {
-			panic("Keepass ID access is empty")
-		}
-		pwd, present := keepassPwdMap[*path]
+	keepass := config.GetKeepass()
+	if keepass != nil {
+		path := keepass.Path
+		id := keepass.Id
+		pwd, present := keepassPwdMap[path]
 		if !present {
-			pwd = readPassword(fmt.Sprintf("Password for %s: ", *path))
-			keepassPwdMap[*path] = pwd
+			pwd = readPassword(fmt.Sprintf("Password for %s: ", path))
+			keepassPwdMap[path] = pwd
 		}
-		return ReadKeepass(*path, pwd, *id, user)
+		return ReadKeepass(path, pwd, id, user)
 	}
 	host, port := getHostPort(config)
 	if host == nil {

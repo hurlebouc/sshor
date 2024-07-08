@@ -47,10 +47,10 @@ var shellCmd = &cobra.Command{
 			hostConf.Port = port
 		}
 		if keepassPathFlag != "" {
-			hostConf.Keepass = &keepassPathFlag
-		}
-		if keepassIdFlag != "" {
-			hostConf.KeepassId = &keepassIdFlag
+			hostConf.Keepass = &config.Keepass{
+				Path: keepassPathFlag,
+				Id:   keepassIdFlag,
+			}
 		}
 		ssh.Shell(*hostConf, passwordFlag, keepassPwdFlag)
 	},
