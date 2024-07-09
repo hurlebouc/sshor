@@ -17,6 +17,9 @@ _machine2: {
 	kiwi: {
 		host: "192.168.1.2"
 		user: "partage"
+		shellHook: {
+			cmd: "su -"
+		}
 	}
 	testjump: {
 		host: "127.0.0.1"
