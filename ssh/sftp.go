@@ -30,23 +30,41 @@ func CopyFileToRemote(client *sftp.Client, src, dst string) {
 	if err != nil {
 		panic(err)
 	}
+	defer f.Close()
 
 	srcReader, err := os.Open(src)
 	if err != nil {
 		panic(err)
 	}
+	defer srcReader.Close()
 
-	f.ReadFrom(srcReader)
-
-	if _, err := f.Write([]byte("Hello world!")); err != nil {
-		log.Fatal(err)
-	}
-	f.Close()
-
-	// check it's there
-	fi, err := client.Lstat("hello.txt")
+	_, err = f.ReadFrom(srcReader)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	log.Println(fi)
+}
+
+func CopyFileToLocal(client *sftp.Client, src, dst string) {
+
+	err := os.MkdirAll(filepath.Dir(dst), os.ModeDir)
+	if err != nil {
+		panic(err)
+	}
+
+	f, err := os.Create(dst)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	srcReader, err := client.Open(src)
+	if err != nil {
+		panic(err)
+	}
+	defer srcReader.Close()
+
+	_, err = f.ReadFrom(srcReader)
+	if err != nil {
+		panic(err)
+	}
 }
