@@ -4,7 +4,6 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/hurlebouc/sshor/config"
@@ -30,29 +29,7 @@ var shellCmd = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		configGlobal, err := config.ReadConf()
-		if err != nil {
-			panic(fmt.Errorf("cannot read config: %w", err))
-		}
-		login, hostname, port := splitFullHost(getFullHost(args))
-		hostConf := configGlobal.GetHost(hostname)
-		if hostConf == nil {
-			hostConf = &config.Host{}
-		}
-		if login != nil {
-			hostConf.User = login
-		}
-		hostConf.Host = getHost(args, configGlobal)
-		if port != nil {
-			hostConf.Port = port
-		}
-		if keepassPathFlag != "" {
-			hostConf.Keepass = &config.Keepass{
-				Path: keepassPathFlag,
-				Id:   keepassIdFlag,
-			}
-		}
-		ssh.Shell(*hostConf, passwordFlag, keepassPwdFlag)
+		ssh.Shell(getHostConfig(readConf(), args[0]), passwordFlag, keepassPwdFlag)
 	},
 }
 

@@ -19,13 +19,6 @@ func newSftp(conn *ssh.Client) *sftp.Client {
 	return client
 }
 
-func (e Endpoint) join(path string) Endpoint {
-	return Endpoint{
-		path:       e.fileSystem.join(e.path, path),
-		fileSystem: e.fileSystem,
-	}
-}
-
 func CopyFile(src, dst Endpoint) {
 	err := dst.fileSystem.mkdirAll(filepath.Dir(dst.path))
 	if err != nil {

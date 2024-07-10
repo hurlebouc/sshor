@@ -4,6 +4,7 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -95,12 +96,48 @@ func splitFullHost(fullHost string) (*string, string, *uint16) {
 	return login, host, port
 }
 
-func getHost(args []string, config *config.Config) *string {
-	_, host, _ := splitFullHost(getFullHost(args))
+func getHost(arg string, config *config.Config) *string {
+	_, host, _ := splitFullHost(arg)
 
 	if config.GetHost(host) == nil {
 		return &host
 	}
 
 	return config.GetHost(host).Host
+}
+
+func readConf() *config.Config {
+	configGlobal, err := config.ReadConf()
+	if err != nil {
+		panic(fmt.Errorf("cannot read config: %w", err))
+	}
+	return configGlobal
+}
+
+func getHostConfig(configGlobal *config.Config, userAtHostPort string) config.Host {
+	login, hostname, port := splitFullHost(userAtHostPort)
+	hostConf := configGlobal.GetHost(hostname)
+	if hostConf == nil {
+		hostConf = &config.Host{}
+	}
+	if loginFlag != "" {
+		hostConf.User = &loginFlag
+	}
+	if login != nil {
+		hostConf.User = login
+	}
+	hostConf.Host = getHost(userAtHostPort, configGlobal)
+	if portFlag != 0 {
+		hostConf.Port = &portFlag
+	}
+	if port != nil {
+		hostConf.Port = port
+	}
+	if keepassPathFlag != "" {
+		hostConf.Keepass = &config.Keepass{
+			Path: keepassPathFlag,
+			Id:   keepassIdFlag,
+		}
+	}
+	return *hostConf
 }

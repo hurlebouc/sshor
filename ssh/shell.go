@@ -2,10 +2,8 @@ package ssh
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"os"
-	"os/user"
 
 	"github.com/hurlebouc/sshor/config"
 	"golang.org/x/crypto/ssh"
@@ -33,17 +31,9 @@ func (p PatternDetector) exportBytes() []byte {
 }
 
 func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
-	keepassPwdMap := map[string]string{}
-	if hostConf.GetKeepass() != nil && keepassPwdFlag != "" {
-		keepassPwdMap[hostConf.GetKeepass().Path] = keepassPwdFlag
-	}
+	keepassPwdMap := InitKeepassPwdMap(hostConf, keepassPwdFlag)
 
-	currentUser, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-
-	ctx := context.WithValue(context.Background(), CURRENT_USER, currentUser.Username)
+	ctx := InitContext()
 
 	conn, _ := NewSshClient(ctx, hostConf, passwordFlag, keepassPwdMap)
 	defer conn.Close()

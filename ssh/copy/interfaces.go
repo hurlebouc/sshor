@@ -21,9 +21,21 @@ type fileSystem interface {
 	open(path string) (reader, error)
 	readDir(path string) ([]fs.FileInfo, error)
 	join(a, b string) string
+	close()
 }
 
 type Endpoint struct {
 	path       string
 	fileSystem fileSystem
+}
+
+func (e Endpoint) join(path string) Endpoint {
+	return Endpoint{
+		path:       e.fileSystem.join(e.path, path),
+		fileSystem: e.fileSystem,
+	}
+}
+
+func (e Endpoint) Close() {
+	e.fileSystem.close()
 }

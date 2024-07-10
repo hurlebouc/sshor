@@ -40,6 +40,8 @@ func (local localFS) readDir(path string) ([]fs.FileInfo, error) {
 	return res, nil
 }
 
+func (local localFS) close() {}
+
 func NewLocal(path string) Endpoint {
 	return Endpoint{
 		path:       path,

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hurlebouc/sshor/config"
+	"github.com/hurlebouc/sshor/ssh/copy"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 )
@@ -18,8 +20,10 @@ var sftpCmd = &cobra.Command{
 	Long:  "copy files from/to remote",
 	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
+		configGlobal = readConf()
 		files := lo.Map(args, func(item string, idx int) fichier { return parseArg(item) })
-		panic(files)
+		dst := files[len(files)-1]
+		panic(dst)
 	},
 }
 
@@ -45,6 +49,13 @@ type fichier struct {
 type remoteArg struct {
 	host string
 	user *string
+}
+
+func (remoteArg remoteArg) getUserAtHost() string {
+	if remoteArg.user == nil {
+		return remoteArg.host
+	}
+	return fmt.Sprintf("%s@%s", *remoteArg.user, remoteArg.host)
 }
 
 func parseArg(arg string) fichier {
@@ -80,4 +91,18 @@ func parseRemoteArg(arg string) remoteArg {
 		host: split[1],
 		user: &split[0],
 	}
+}
+
+func getEndpoint(configGlobal *config.Config, env map[string]copy.Endpoint, fichier fichier) copy.Endpoint {
+	if fichier.remote == nil {
+		return copy.NewLocal(fichier.path)
+	}
+	endpoint, present := env[fichier.remote.getUserAtHost()]
+	if present {
+		return endpoint
+	}
+	hostConfig := getHostConfig(configGlobal, fichier.remote.getUserAtHost())
+	endpoint = copy.NewRemote(hostConfig, passwordFlag, keepassPwdFlag, fichier.path)
+	env[fichier.remote.getUserAtHost()] = endpoint
+	return endpoint
 }

@@ -3,6 +3,7 @@ package ssh
 import (
 	"context"
 	"fmt"
+	"os/user"
 	"syscall"
 
 	"github.com/hurlebouc/sshor/config"
@@ -181,4 +182,20 @@ func getHostPort(config config.Host) (*string, uint16) {
 		return getHostPort(*config.Jump)
 	}
 	return nil, 22
+}
+
+func InitContext() context.Context {
+	currentUser, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	return context.WithValue(context.Background(), CURRENT_USER, currentUser.Username)
+}
+
+func InitKeepassPwdMap(hostConfig config.Host, keepassPwdFlag string) map[string]string {
+	keepassPwdMap := map[string]string{}
+	if hostConfig.GetKeepass() != nil && keepassPwdFlag != "" {
+		keepassPwdMap[hostConfig.GetKeepass().Path] = keepassPwdFlag
+	}
+	return keepassPwdMap
 }

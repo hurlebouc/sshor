@@ -1,7 +1,6 @@
 package copy
 
 import (
-	"context"
 	"io/fs"
 
 	"github.com/hurlebouc/sshor/config"
@@ -10,7 +9,8 @@ import (
 )
 
 type remoteFS struct {
-	client *sftp.Client
+	client    *sftp.Client
+	sshClient ssh.SshClient
 }
 
 func (remote remoteFS) join(a, b string) string {
@@ -33,7 +33,15 @@ func (remote remoteFS) readDir(path string) ([]fs.FileInfo, error) {
 	return remote.client.ReadDir(path)
 }
 
-func NewRemote(ctx context.Context, hostConfig config.Host, passwordFlag string, keepassPwdMap map[string]string, path string) Endpoint {
+func (remote remoteFS) close() {
+	remote.client.Close()
+	remote.sshClient.Close()
+}
+
+func NewRemote(hostConfig config.Host, passwordFlag, keepassPwdFlag string, path string) Endpoint {
+	keepassPwdMap := ssh.InitKeepassPwdMap(hostConfig, keepassPwdFlag)
+
+	ctx := ssh.InitContext()
 	sshClient, _ := ssh.NewSshClient(ctx, hostConfig, passwordFlag, keepassPwdMap)
 	if sshClient.Client == nil {
 		panic("Cannot construct ssh client. This is probably caused by not specifying host of the target.")
@@ -41,7 +49,15 @@ func NewRemote(ctx context.Context, hostConfig config.Host, passwordFlag string,
 	return Endpoint{
 		path: path,
 		fileSystem: remoteFS{
-			client: newSftp(sshClient.Client),
+			client:    newSftp(sshClient.Client),
+			sshClient: sshClient,
 		},
+	}
+}
+
+func NewRemoteFromFS(remoteFS remoteFS, path string) Endpoint {
+	return Endpoint{
+		path:       path,
+		fileSystem: remoteFS,
 	}
 }
