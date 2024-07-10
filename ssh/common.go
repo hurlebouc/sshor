@@ -57,20 +57,20 @@ func getAuthMethod(user string, config config.Host, keepassPwdMap map[string]str
 }
 
 type SshClient struct {
-	client *ssh.Client
-	a      *struct {
+	Client     *ssh.Client
+	ChangeUser *struct {
 		login    string
 		password string
 	}
-	jump *SshClient
+	Jump *SshClient
 }
 
 func (c SshClient) Close() {
-	if c.client != nil {
-		c.client.Close()
+	if c.Client != nil {
+		c.Client.Close()
 	}
-	if c.jump != nil {
-		c.jump.Close()
+	if c.Jump != nil {
+		c.Jump.Close()
 	}
 }
 
@@ -102,11 +102,11 @@ func newSshClientConfig(ctx context.Context, hostConfig config.Host, passwordFla
 	return clientConfig, newctx
 }
 
-func newSshClient(ctx context.Context, hostConfig config.Host, passwordFlag string, keepassPwdMap map[string]string) (SshClient, context.Context) {
+func NewSshClient(ctx context.Context, hostConfig config.Host, passwordFlag string, keepassPwdMap map[string]string) (SshClient, context.Context) {
 	var jumpClient *SshClient = nil
 	if hostConfig.GetJump() != nil {
 		jumpHost := *hostConfig.GetJump()
-		jumpClients, nctx := newSshClient(ctx, jumpHost, "", keepassPwdMap)
+		jumpClients, nctx := NewSshClient(ctx, jumpHost, "", keepassPwdMap)
 		jumpClient = &jumpClients
 		ctx = nctx
 	}
@@ -114,9 +114,9 @@ func newSshClient(ctx context.Context, hostConfig config.Host, passwordFlag stri
 		login, ctx := getUser(ctx, hostConfig)
 		password := getPassword(login, hostConfig, keepassPwdMap)
 		return SshClient{
-			client: nil,
-			jump:   jumpClient,
-			a: &struct {
+			Client: nil,
+			Jump:   jumpClient,
+			ChangeUser: &struct {
 				login    string
 				password string
 			}{
@@ -143,9 +143,9 @@ func newSshClient(ctx context.Context, hostConfig config.Host, passwordFlag stri
 		}
 		sClient := ssh.NewClient(ncc, chans, reqs)
 		return SshClient{
-			client: sClient,
-			a:      nil,
-			jump:   jumpClient,
+			Client:     sClient,
+			ChangeUser: nil,
+			Jump:       jumpClient,
 		}, ctx
 	} else {
 		clientConfig, ctx := newSshClientConfig(ctx, hostConfig, passwordFlag, keepassPwdMap)
@@ -155,18 +155,18 @@ func newSshClient(ctx context.Context, hostConfig config.Host, passwordFlag stri
 			panic(err)
 		}
 		return SshClient{
-			client: conn,
-			a:      nil,
-			jump:   jumpClient,
+			Client:     conn,
+			ChangeUser: nil,
+			Jump:       jumpClient,
 		}, ctx
 	}
 }
 
 func GetFirstNonNilSshClient(jumpClient SshClient) *ssh.Client {
-	if jumpClient.client != nil || jumpClient.jump == nil {
-		return jumpClient.client
+	if jumpClient.Client != nil || jumpClient.Jump == nil {
+		return jumpClient.Client
 	}
-	return GetFirstNonNilSshClient(*jumpClient.jump)
+	return GetFirstNonNilSshClient(*jumpClient.Jump)
 }
 
 func getHostPort(config config.Host) (*string, uint16) {

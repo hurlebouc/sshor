@@ -45,7 +45,7 @@ func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 
 	ctx := context.WithValue(context.Background(), CURRENT_USER, currentUser.Username)
 
-	conn, _ := newSshClient(ctx, hostConf, passwordFlag, keepassPwdMap)
+	conn, _ := NewSshClient(ctx, hostConf, passwordFlag, keepassPwdMap)
 	defer conn.Close()
 	// Create a session
 	sshClient := GetFirstNonNilSshClient(conn)
@@ -92,14 +92,14 @@ func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 	session.Stderr = os.Stderr
 
 	go func() {
-		if conn.a != nil {
+		if conn.ChangeUser != nil {
 			// se connecte uniquement avec le dernier utilisateur
-			_, err := input.Write([]byte(fmt.Sprintf("su - %s\n", conn.a.login)))
+			_, err := input.Write([]byte(fmt.Sprintf("su - %s\n", conn.ChangeUser.login)))
 			if err != nil {
 				panic(err)
 			}
 			<-cha
-			input.Write([]byte(fmt.Sprintf("%s\n", conn.a.password)))
+			input.Write([]byte(fmt.Sprintf("%s\n", conn.ChangeUser.password)))
 		}
 		buffer := make([]byte, 5)
 		for {
@@ -122,7 +122,7 @@ func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 		p := PatternDetector{
 			buffer: make([]byte, 100),
 		}
-		passed := conn.a == nil
+		passed := conn.ChangeUser == nil
 		for {
 			n, err := output.Read(buffer)
 			if n == 0 {
