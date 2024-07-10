@@ -10,11 +10,12 @@ import (
 	"strings"
 
 	"github.com/hurlebouc/sshor/config"
+	"github.com/hurlebouc/sshor/ssh"
 
 	"github.com/spf13/cobra"
 )
 
-const Version = "0.2.0"
+const Version = "0.3.0"
 
 var keepassPathFlag string
 var keepassIdFlag string
@@ -22,6 +23,7 @@ var keepassPwdFlag string
 var loginFlag string
 var passwordFlag string
 var portFlag uint16
+var verboseFlag bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -50,17 +52,11 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&loginFlag, "login", "l", "", "SSH login")
 	rootCmd.PersistentFlags().StringVarP(&passwordFlag, "password", "w", "", "SSH password")
 	rootCmd.PersistentFlags().Uint16VarP(&portFlag, "port", "p", 0, "SSH port")
+	rootCmd.PersistentFlags().BoolVarP(&verboseFlag, "verbose", "v", false, "verbosity")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
-func getFullHost(args []string) string {
-	if len(args) == 0 {
-		panic("Host is missing")
-	}
-	return args[0]
 }
 
 func splitFullHost(fullHost string) (*string, string, *uint16) {
@@ -140,4 +136,10 @@ func getHostConfig(configGlobal *config.Config, userAtHostPort string) config.Ho
 		}
 	}
 	return *hostConf
+}
+
+func getOptions() ssh.Options {
+	return ssh.Options{
+		Verbose: verboseFlag,
+	}
 }

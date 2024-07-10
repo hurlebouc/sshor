@@ -82,7 +82,7 @@ func NewRemote(hostConfig config.Host, passwordFlag, keepassPwdFlag string, path
 	return Endpoint{
 		path: path,
 		fileSystem: remoteFS{
-			client:     newSftp(sshClient.Client),
+			client:     newSftp(sshClient),
 			sshClient:  sshClient,
 			hostConfig: hostConfig,
 		},

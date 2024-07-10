@@ -199,3 +199,7 @@ func InitKeepassPwdMap(hostConfig config.Host, keepassPwdFlag string) map[string
 	}
 	return keepassPwdMap
 }
+
+type Options struct {
+	Verbose bool
+}

@@ -5,21 +5,24 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/hurlebouc/sshor/ssh"
 	"github.com/pkg/sftp"
-	"golang.org/x/crypto/ssh"
 )
 
 // Ne pas oublier le defer après !
-func newSftp(conn *ssh.Client) *sftp.Client {
+func newSftp(conn ssh.SshClient) *sftp.Client {
 	// open an SFTP session over an existing ssh connection.
-	client, err := sftp.NewClient(conn)
+	client, err := sftp.NewClient(conn.Client)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return client
 }
 
-func copyFile(src, dst Endpoint) {
+func copyFile(options ssh.Options, src, dst Endpoint) {
+	if options.Verbose {
+		log.Printf("%s --> %s\n", src.url(), dst.url())
+	}
 	err := dst.fileSystem.mkdirAll(filepath.Dir(dst.path))
 	if err != nil {
 		panic(err)
@@ -43,7 +46,7 @@ func copyFile(src, dst Endpoint) {
 	}
 }
 
-func copyDir(src, dst Endpoint) {
+func copyDir(options ssh.Options, src, dst Endpoint) {
 	err := dst.fileSystem.mkdirAll(dst.path)
 	if err != nil {
 		panic(err)
@@ -54,18 +57,18 @@ func copyDir(src, dst Endpoint) {
 	}
 	for _, entry := range entries {
 		if entry.IsDir() {
-			copyDir(src.join(entry.Name()), dst.join(entry.Name()))
+			copyDir(options, src.join(entry.Name()), dst.join(entry.Name()))
 		} else {
-			copyFile(src.join(entry.Name()), dst.join(entry.Name()))
+			copyFile(options, src.join(entry.Name()), dst.join(entry.Name()))
 		}
 	}
 }
 
-func Copy(src, dst Endpoint) {
+func Copy(options ssh.Options, src, dst Endpoint) {
 	if src.isDir() {
-		copyDir(src, CompleteDstPath(src, dst))
+		copyDir(options, src, CompleteDstPath(src, dst))
 	} else {
-		copyFile(src, CompleteDstPath(src, dst))
+		copyFile(options, src, CompleteDstPath(src, dst))
 	}
 }
 

@@ -13,10 +13,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type couple struct {
-	src, dst copy.Endpoint
-}
-
 // sftpCmd represents the sftp command
 var sftpCmd = &cobra.Command{
 	Use:   "copy",
@@ -30,7 +26,7 @@ var sftpCmd = &cobra.Command{
 		dst := endpoints[len(endpoints)-1]
 		srcs := endpoints[1:]
 		for _, src := range srcs {
-			copy.Copy(src, dst)
+			copy.Copy(getOptions(), src, dst)
 		}
 	},
 }
