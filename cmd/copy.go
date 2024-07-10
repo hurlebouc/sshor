@@ -24,7 +24,7 @@ var sftpCmd = &cobra.Command{
 		env := map[string]copy.Endpoint{}
 		endpoints := lo.Map(args, func(item string, idx int) copy.Endpoint { return getEndpoint(configGlobal, env, parseArg(item)) })
 		dst := endpoints[len(endpoints)-1]
-		srcs := endpoints[1:]
+		srcs := endpoints[:len(endpoints)-1]
 		for _, src := range srcs {
 			copy.Copy(getOptions(), src, dst)
 		}
