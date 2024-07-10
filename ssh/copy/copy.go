@@ -19,7 +19,7 @@ func newSftp(conn *ssh.Client) *sftp.Client {
 	return client
 }
 
-func CopyFile(src, dst Endpoint) {
+func copyFile(src, dst Endpoint) {
 	err := dst.fileSystem.mkdirAll(filepath.Dir(dst.path))
 	if err != nil {
 		panic(err)
@@ -43,7 +43,7 @@ func CopyFile(src, dst Endpoint) {
 	}
 }
 
-func CopyDir(src, dst Endpoint) {
+func copyDir(src, dst Endpoint) {
 	err := dst.fileSystem.mkdirAll(dst.path)
 	if err != nil {
 		panic(err)
@@ -54,10 +54,18 @@ func CopyDir(src, dst Endpoint) {
 	}
 	for _, entry := range entries {
 		if entry.IsDir() {
-			CopyDir(src.join(entry.Name()), dst.join(entry.Name()))
+			copyDir(src.join(entry.Name()), dst.join(entry.Name()))
 		} else {
-			CopyFile(src.join(entry.Name()), dst.join(entry.Name()))
+			copyFile(src.join(entry.Name()), dst.join(entry.Name()))
 		}
+	}
+}
+
+func Copy(src, dst Endpoint) {
+	if src.isDir() {
+		copyDir(src, CompleteDstPath(src, dst))
+	} else {
+		copyFile(src, CompleteDstPath(src, dst))
 	}
 }
 

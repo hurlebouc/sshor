@@ -21,12 +21,12 @@ func (c *Config) GetHost(host string) *Host {
 	if c == nil {
 		return nil
 	}
-	for k, v := range c.Hosts {
-		if k == host {
-			return &v
-		}
+	h, present := c.Hosts[host]
+	if present {
+		return &h
+	} else {
+		return nil
 	}
-	return nil
 }
 
 func (h *Host) GetKeepass() *Keepass {

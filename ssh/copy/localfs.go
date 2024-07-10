@@ -1,6 +1,7 @@
 package copy
 
 import (
+	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -38,6 +39,28 @@ func (local localFS) readDir(path string) ([]fs.FileInfo, error) {
 		res[i] = info
 	}
 	return res, nil
+}
+
+func (local localFS) isDir(path string) bool {
+	stat, err := os.Stat(path)
+	if err != nil {
+		panic(err)
+	}
+	return stat.IsDir()
+}
+
+func (local localFS) url(path string) string {
+	return path
+}
+
+func (local localFS) exists(path string) bool {
+	if _, err := os.Stat(path); err == nil {
+		return true
+	} else if errors.Is(err, os.ErrNotExist) {
+		return false
+	} else {
+		panic(err)
+	}
 }
 
 func (local localFS) close() {}

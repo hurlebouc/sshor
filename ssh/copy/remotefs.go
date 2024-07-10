@@ -1,6 +1,7 @@
 package copy
 
 import (
+	"fmt"
 	"io/fs"
 
 	"github.com/hurlebouc/sshor/config"
@@ -9,9 +10,13 @@ import (
 )
 
 type remoteFS struct {
-	client    *sftp.Client
-	sshClient ssh.SshClient
+	client     *sftp.Client
+	sshClient  ssh.SshClient
+	hostConfig config.Host
 }
+
+var unknownHost = "UNKNOWN_HOST"
+var unknownUser = "UNKNOWN_USER"
 
 func (remote remoteFS) join(a, b string) string {
 	return a + "/" + b
@@ -38,6 +43,34 @@ func (remote remoteFS) close() {
 	remote.sshClient.Close()
 }
 
+func (remote remoteFS) isDir(path string) bool {
+	stat, err := remote.client.Stat(path)
+	if err != nil {
+		panic(err)
+	}
+	return stat.IsDir()
+}
+
+func (remote remoteFS) url(path string) string {
+	host := remote.hostConfig.Host
+	if host == nil {
+		host = &unknownHost
+	}
+	user := remote.hostConfig.User
+	if user == nil {
+		user = &unknownUser
+	}
+	return fmt.Sprintf("sftp://%s@%s:%s", *user, *host, path)
+}
+
+func (remote remoteFS) exists(path string) bool {
+	if _, err := remote.client.Stat(path); err == nil {
+		return true
+	} else {
+		return false
+	}
+}
+
 func NewRemote(hostConfig config.Host, passwordFlag, keepassPwdFlag string, path string) Endpoint {
 	keepassPwdMap := ssh.InitKeepassPwdMap(hostConfig, keepassPwdFlag)
 
@@ -49,15 +82,9 @@ func NewRemote(hostConfig config.Host, passwordFlag, keepassPwdFlag string, path
 	return Endpoint{
 		path: path,
 		fileSystem: remoteFS{
-			client:    newSftp(sshClient.Client),
-			sshClient: sshClient,
+			client:     newSftp(sshClient.Client),
+			sshClient:  sshClient,
+			hostConfig: hostConfig,
 		},
-	}
-}
-
-func NewRemoteFromFS(remoteFS remoteFS, path string) Endpoint {
-	return Endpoint{
-		path:       path,
-		fileSystem: remoteFS,
 	}
 }

@@ -13,6 +13,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type couple struct {
+	src, dst copy.Endpoint
+}
+
 // sftpCmd represents the sftp command
 var sftpCmd = &cobra.Command{
 	Use:   "copy",
@@ -20,10 +24,14 @@ var sftpCmd = &cobra.Command{
 	Long:  "copy files from/to remote",
 	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		configGlobal = readConf()
-		files := lo.Map(args, func(item string, idx int) fichier { return parseArg(item) })
-		dst := files[len(files)-1]
-		panic(dst)
+		configGlobal := readConf()
+		env := map[string]copy.Endpoint{}
+		endpoints := lo.Map(args, func(item string, idx int) copy.Endpoint { return getEndpoint(configGlobal, env, parseArg(item)) })
+		dst := endpoints[len(endpoints)-1]
+		srcs := endpoints[1:]
+		for _, src := range srcs {
+			copy.Copy(src, dst)
+		}
 	},
 }
 
