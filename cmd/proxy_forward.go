@@ -15,28 +15,16 @@ var proxyForwardCmd = &cobra.Command{
 	Long:  `This command opens a listening port on local host and forwards each request on this port to a destination accessible from the remote host.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		ssh.ForwardProxy(getHostConfig(readConf(), args[0]), getOptions(), passwordFlag, keepassPwdFlag, proxyForwardOptions.listeningIP, proxyForwardOptions.listeningPort, proxyForwardOptions.destinationIP, proxyForwardOptions.destinationPort)
+		ssh.ForwardProxy(getHostConfig(readConf(), args[0]), getOptions(), passwordFlag, keepassPwdFlag, proxyOptions.listeningIP, proxyOptions.listeningPort, proxyOptions.destinationIP, proxyOptions.destinationPort)
 	},
 }
-
-var proxyForwardOptions struct {
-	listeningIP     string
-	listeningPort   uint16
-	destinationIP   string
-	destinationPort uint16
-}
-
-const LISTENING_IP = "listening-ip"
-const LISTENING_PORT = "listening-port"
-const DESTINATION_ADDR = "destination-addr"
-const DESTINATION_PORT = "destination-port"
 
 func init() {
 	rootCmd.AddCommand(proxyForwardCmd)
 
-	proxyForwardCmd.Flags().StringVar(&proxyForwardOptions.listeningIP, LISTENING_IP, "127.0.0.1", "local listening IP")
-	proxyForwardCmd.Flags().Uint16Var(&proxyForwardOptions.listeningPort, LISTENING_PORT, 0, "local listening port (default use random)")
-	proxyForwardCmd.Flags().StringVar(&proxyForwardOptions.destinationIP, DESTINATION_ADDR, "127.0.0.1", "destination address accessible from remote host")
-	proxyForwardCmd.Flags().Uint16Var(&proxyForwardOptions.destinationPort, DESTINATION_PORT, 0, "destination port accessible from remote host")
+	proxyForwardCmd.Flags().StringVar(&proxyOptions.listeningIP, LISTENING_IP, "127.0.0.1", "local listening IP")
+	proxyForwardCmd.Flags().Uint16Var(&proxyOptions.listeningPort, LISTENING_PORT, 0, "local listening port (default use random)")
+	proxyForwardCmd.Flags().StringVar(&proxyOptions.destinationIP, DESTINATION_ADDR, "127.0.0.1", "destination address accessible from remote host")
+	proxyForwardCmd.Flags().Uint16Var(&proxyOptions.destinationPort, DESTINATION_PORT, 0, "destination port accessible from remote host")
 	proxyForwardCmd.MarkFlagRequired(DESTINATION_PORT)
 }

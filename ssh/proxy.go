@@ -8,31 +8,40 @@ import (
 	"net"
 
 	"github.com/hurlebouc/sshor/config"
+	"golang.org/x/crypto/ssh"
 )
 
 func randomPort() uint16 {
 	return uint16(rand.Uint32())
 }
 
-func ForwardProxy(hostConf config.Host, options Options, passwordFlag, keepassPwdFlag string, listeningIp string, listeningPort uint16, destinationAddr string, destinationPort uint16) {
-	keepassPwdMap := InitKeepassPwdMap(hostConf, keepassPwdFlag)
-	ctx := InitContext()
-	sshClient, _ := NewSshClient(ctx, hostConf, passwordFlag, keepassPwdMap)
-	defer sshClient.Close()
-	if sshClient.Client == nil {
-		log.Panicln("Cannot change user of proxied connection")
-	}
+type network interface {
+	Listen(network string, address string) (net.Listener, error)
+	Dial(n string, addr string) (net.Conn, error)
+}
+
+type localNet struct{}
+
+func (ln localNet) Listen(network string, address string) (net.Listener, error) {
+	return net.Listen(network, address)
+}
+
+func (ln localNet) Dial(n string, addr string) (net.Conn, error) {
+	return net.Dial(n, addr)
+}
+
+func proxy(options Options, srcNet, dstNet network, listeningIp string, listeningPort uint16, destinationAddr string, destinationPort uint16) {
 
 	listPort := listeningPort
 	if listeningPort == 0 {
 		listPort = randomPort()
 	}
 
-	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", listeningIp, listPort))
+	listener, err := srcNet.Listen("tcp", fmt.Sprintf("%s:%d", listeningIp, listPort))
 
 	if listeningPort == 0 {
 		for err != nil {
-			listener, err = net.Listen("tcp", fmt.Sprintf("%s:%d", listeningIp, listeningPort))
+			listener, err = srcNet.Listen("tcp", fmt.Sprintf("%s:%d", listeningIp, listeningPort))
 		}
 	}
 
@@ -50,7 +59,7 @@ func ForwardProxy(hostConf config.Host, options Options, passwordFlag, keepassPw
 		go func() {
 			defer localConn.Close()
 
-			remoteConn, err := sshClient.Client.Dial("tcp", fmt.Sprintf("%s:%d", destinationAddr, destinationPort))
+			remoteConn, err := dstNet.Dial("tcp", fmt.Sprintf("%s:%d", destinationAddr, destinationPort))
 			if err != nil {
 				panic(err)
 			}
@@ -75,4 +84,22 @@ func ForwardProxy(hostConf config.Host, options Options, passwordFlag, keepassPw
 		}()
 
 	}
+}
+
+func getSshClient(hostConf config.Host, passwordFlag, keepassPwdFlag string) *ssh.Client {
+	keepassPwdMap := InitKeepassPwdMap(hostConf, keepassPwdFlag)
+	ctx := InitContext()
+	sshClient, _ := NewSshClient(ctx, hostConf, passwordFlag, keepassPwdMap)
+	defer sshClient.Close()
+	if sshClient.Client == nil {
+		log.Panicln("Cannot change user of proxied connection")
+	}
+	return sshClient.Client
+}
+
+func ForwardProxy(hostConf config.Host, options Options, passwordFlag, keepassPwdFlag string, listeningIp string, listeningPort uint16, destinationAddr string, destinationPort uint16) {
+	proxy(options, localNet{}, getSshClient(hostConf, passwordFlag, keepassPwdFlag), listeningIp, listeningPort, destinationAddr, destinationPort)
+}
+func BackwardProxy(hostConf config.Host, options Options, passwordFlag, keepassPwdFlag string, listeningIp string, listeningPort uint16, destinationAddr string, destinationPort uint16) {
+	proxy(options, getSshClient(hostConf, passwordFlag, keepassPwdFlag), localNet{}, listeningIp, listeningPort, destinationAddr, destinationPort)
 }
