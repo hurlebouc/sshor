@@ -1,6 +1,5 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -10,31 +9,34 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// proxyCmd represents the proxy command
-var proxyCmd = &cobra.Command{
-	Use:   "proxy",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+// proxyForwardCmd represents the proxy command
+var proxyForwardCmd = &cobra.Command{
+	Use:   "proxy-forward",
+	Short: "Forward connections from local to remote",
+	Long:  `This command opens a listening port on local host and forwards each request on this port to a destination accessible from the remote host.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("proxy called")
 	},
 }
 
+var proxyForwardOptions struct {
+	listeningIP     string
+	listeningPort   uint16
+	destinationIP   string
+	destinationPort uint16
+}
+
+const LISTENING_IP = "listening-ip"
+const LISTENING_PORT = "listening-port"
+const DESTINATION_IP = "destination-ip"
+const DESTINATION_PORT = "destination-port"
+
 func init() {
-	rootCmd.AddCommand(proxyCmd)
+	rootCmd.AddCommand(proxyForwardCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// proxyCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// proxyCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	proxyForwardCmd.Flags().StringVar(&proxyForwardOptions.listeningIP, LISTENING_IP, "127.0.0.1", "local listening IP")
+	proxyForwardCmd.Flags().Uint16Var(&proxyForwardOptions.listeningPort, LISTENING_PORT, 0, "local listening port (default use random)")
+	proxyForwardCmd.Flags().StringVar(&proxyForwardOptions.destinationIP, DESTINATION_IP, "127.0.0.1", "destination IP accessible from remote host")
+	proxyForwardCmd.Flags().Uint16Var(&proxyForwardOptions.destinationPort, DESTINATION_PORT, 0, "destination IP accessible from remote host")
+	proxyForwardCmd.MarkFlagRequired(DESTINATION_PORT)
 }
