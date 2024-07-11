@@ -13,8 +13,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// sftpCmd represents the sftp command
-var sftpCmd = &cobra.Command{
+// copyCmd represents the sftp command
+var copyCmd = &cobra.Command{
 	Use:   "copy",
 	Short: "copy files from/to remote",
 	Long:  "copy files from/to remote",
@@ -32,7 +32,7 @@ var sftpCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(sftpCmd)
+	rootCmd.AddCommand(copyCmd)
 }
 
 type fichier struct {
