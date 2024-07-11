@@ -8,7 +8,6 @@ import (
 	"net"
 
 	"github.com/hurlebouc/sshor/config"
-	"golang.org/x/crypto/ssh"
 )
 
 func randomPort() uint16 {
@@ -84,17 +83,6 @@ func proxy(options Options, srcNet, dstNet network, listeningIp string, listenin
 		}()
 
 	}
-}
-
-func getSshClient(hostConf config.Host, passwordFlag, keepassPwdFlag string) *ssh.Client {
-	keepassPwdMap := InitKeepassPwdMap(hostConf, keepassPwdFlag)
-	ctx := InitContext()
-	sshClient, _ := NewSshClient(ctx, hostConf, passwordFlag, keepassPwdMap)
-	defer sshClient.Close()
-	if sshClient.Client == nil {
-		log.Panicln("Cannot change user of proxied connection")
-	}
-	return sshClient.Client
 }
 
 func ForwardProxy(hostConf config.Host, options Options, passwordFlag, keepassPwdFlag string, listeningIp string, listeningPort uint16, destinationAddr string, destinationPort uint16) {

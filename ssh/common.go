@@ -3,6 +3,7 @@ package ssh
 import (
 	"context"
 	"fmt"
+	"log"
 	"os/user"
 	"syscall"
 
@@ -202,4 +203,15 @@ func InitKeepassPwdMap(hostConfig config.Host, keepassPwdFlag string) map[string
 
 type Options struct {
 	Verbose bool
+}
+
+func getSshClient(hostConf config.Host, passwordFlag, keepassPwdFlag string) *ssh.Client {
+	keepassPwdMap := InitKeepassPwdMap(hostConf, keepassPwdFlag)
+	ctx := InitContext()
+	sshClient, _ := NewSshClient(ctx, hostConf, passwordFlag, keepassPwdMap)
+	defer sshClient.Close()
+	if sshClient.Client == nil {
+		log.Panicln("Cannot change user of proxied connection")
+	}
+	return sshClient.Client
 }
