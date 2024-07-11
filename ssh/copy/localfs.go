@@ -14,7 +14,7 @@ func (local localFS) join(a, b string) string {
 }
 
 func (local localFS) mkdirAll(path string) error {
-	return os.MkdirAll(path, os.ModeDir)
+	return os.MkdirAll(path, 0777)
 }
 
 func (local localFS) create(path string) (writer, error) {
