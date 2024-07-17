@@ -6,12 +6,52 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
 
-func startSftpServer() {
+type file struct {
+	content []byte
+}
+
+type directoryLayout struct {
+	files map[string]file
+	dirs  map[string]directoryLayout
+}
+
+func populateDirectory(layout directoryLayout, dirpath string) {
+	for filename, fileLayout := range layout.files {
+		f, err := os.Create(filepath.Join(dirpath, filename))
+		if err != nil {
+			panic(err)
+		}
+		_, err = f.Write(fileLayout.content)
+		if err != nil {
+			panic(err)
+		}
+	}
+	for direname, dirLayout := range layout.dirs {
+		subdir := filepath.Join(dirpath, direname)
+		err := os.Mkdir(subdir, 0777)
+		if err != nil {
+			panic(err)
+		}
+		populateDirectory(dirLayout, subdir)
+	}
+}
+
+func initTempDir(dir directoryLayout) string {
+	dirName, err := os.MkdirTemp(os.TempDir(), "sshor-test")
+	if err != nil {
+		panic(err)
+	}
+	populateDirectory(dir, dirName)
+	return dirName
+}
+
+func startSftpServer(login, paswword string, port uint16, dir string) {
 	debugStream := os.Stderr
 
 	// An SSH server is represented by a ServerConfig, which holds
@@ -21,7 +61,7 @@ func startSftpServer() {
 			// Should use constant-time compare (or better, salt+hash) in
 			// a production setting.
 			fmt.Fprintf(debugStream, "Login: %s\n", c.User())
-			if c.User() == "testuser" && string(pass) == "tiger" {
+			if c.User() == login && string(pass) == paswword {
 				return nil, nil
 			}
 			return nil, fmt.Errorf("password rejected for %q", c.User())
@@ -42,7 +82,7 @@ func startSftpServer() {
 
 	// Once a ServerConfig has been configured, connections can be
 	// accepted.
-	listener, err := net.Listen("tcp", "0.0.0.0:2222")
+	listener, err := net.Listen("tcp", "0.0.0.0:"+string(port))
 	if err != nil {
 		log.Fatal("failed to listen for connection", err)
 	}
@@ -102,6 +142,7 @@ func startSftpServer() {
 
 		serverOptions := []sftp.ServerOption{
 			sftp.WithDebug(debugStream),
+			sftp.WithServerWorkingDirectory(dir),
 		}
 
 		fmt.Fprintf(debugStream, "Read write server\n")
