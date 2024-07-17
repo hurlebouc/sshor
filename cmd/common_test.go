@@ -1,4 +1,4 @@
-package cmd
+package cmd_test
 
 import (
 	"crypto/rand"
@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"testing"
 
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
@@ -21,6 +22,104 @@ type file struct {
 type directoryLayout struct {
 	files map[string]file
 	dirs  map[string]directoryLayout
+}
+
+func equalsFile(a, b file) bool {
+	if len(a.content) != len(b.content) {
+		return false
+	}
+	for i, v := range a.content {
+		if v != b.content[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func equalDirs(a, b directoryLayout) bool {
+	if len(a.files) != len(b.files) {
+		return false
+	}
+	if len(a.dirs) != len(b.dirs) {
+		return false
+	}
+	for k, v := range a.files {
+		vv, present := b.files[k]
+		if !present {
+			return false
+		}
+		if !equalsFile(v, vv) {
+			return false
+		}
+	}
+	for k, v := range a.dirs {
+		vv, present := b.dirs[k]
+		if !present {
+			return false
+		}
+		if !equalDirs(v, vv) {
+			return false
+		}
+	}
+	return true
+}
+
+func TestEqualsFiles(t *testing.T) {
+	a := file{content: []byte{}}
+	if !equalsFile(a, a) {
+		t.Fatalf("file\n--> %+v\ninvalidate \"=\" reflexivity", a)
+	}
+	aa := file{content: []byte{}}
+	if !equalsFile(a, aa) {
+		t.Fatalf("file\n--> %+v\nand\n--> %+v\nshould be equal", a, aa)
+	}
+	b := file{content: []byte("coucou")}
+	if equalsFile(a, b) {
+		t.Fatalf("file\n--> %+v\nand\n--> %+v\nshould be differents", a, b)
+	}
+	bb := file{content: []byte("coucou")}
+	if !equalsFile(b, bb) {
+		t.Fatalf("file\n--> %+v\nand\n--> %+v\nshould be equal", b, bb)
+	}
+}
+
+func TestEqualsDirs(t *testing.T) {
+	a := directoryLayout{}
+	if !equalDirs(a, a) {
+		t.Fatalf("layout\n--> %+v\ninvalidate \"=\" reflexivity", a)
+	}
+	aa := directoryLayout{}
+	if !equalDirs(a, aa) {
+		t.Fatalf("layout\n--> %+v\nand\n--> %+v\nshould be equal", a, aa)
+	}
+	b := directoryLayout{
+		files: map[string]file{
+			"test1": {
+				content: []byte("coucou"),
+			},
+			"test2": {
+				content: []byte("plop"),
+			},
+			"test3": {},
+		},
+	}
+	if equalDirs(a, b) {
+		t.Fatalf("layout\n--> %+v\nand\n--> %+v\nshould be differents", a, b)
+	}
+	bb := directoryLayout{
+		files: map[string]file{
+			"test1": {
+				content: []byte("coucou"),
+			},
+			"test2": {
+				content: []byte("plop"),
+			},
+			"test3": {},
+		},
+	}
+	if !equalDirs(b, bb) {
+		t.Fatalf("layout\n--> %+v\nand\n--> %+v\nshould be equal", b, bb)
+	}
 }
 
 func populateDirectory(layout directoryLayout, dirpath string) {
@@ -41,6 +140,33 @@ func populateDirectory(layout directoryLayout, dirpath string) {
 			panic(err)
 		}
 		populateDirectory(dirLayout, subdir)
+	}
+}
+
+func readDirectory(dirpath string) directoryLayout {
+	entries, err := os.ReadDir(dirpath)
+	if err != nil {
+		panic(err)
+	}
+	dirs := map[string]directoryLayout{}
+	files := map[string]file{}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			subLayout := readDirectory(filepath.Join(dirpath, entry.Name()))
+			dirs[entry.Name()] = subLayout
+		} else {
+			bytes, err := os.ReadFile(filepath.Join(dirpath, entry.Name()))
+			if err != nil {
+				panic(err)
+			}
+			files[entry.Name()] = file{
+				content: bytes,
+			}
+		}
+	}
+	return directoryLayout{
+		files: files,
+		dirs:  dirs,
 	}
 }
 

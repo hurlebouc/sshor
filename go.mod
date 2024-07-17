@@ -4,6 +4,7 @@ go 1.22.3
 
 require (
 	cuelang.org/go v0.9.2
+	github.com/pkg/sftp v1.13.6
 	github.com/samber/lo v1.42.0
 	github.com/spf13/cobra v1.8.1
 	github.com/tobischo/gokeepasslib v1.0.0
@@ -21,7 +22,6 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
-	github.com/pkg/sftp v1.13.6 // indirect
 	github.com/protocolbuffers/txtpbfmt v0.0.0-20230328191034-3462fbc510c0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
