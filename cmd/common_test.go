@@ -1,6 +1,8 @@
-package cmd_test
+package cmd
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
 	"io"
 	"log"
@@ -51,7 +53,7 @@ func initTempDir(dir directoryLayout) string {
 	return dirName
 }
 
-func startSftpServer(login, paswword string, port uint16, dir string) {
+func startSftpServer(c chan struct{}, login, paswword string, port uint16, dir string) {
 	debugStream := os.Stderr
 
 	// An SSH server is represented by a ServerConfig, which holds
@@ -68,25 +70,25 @@ func startSftpServer(login, paswword string, port uint16, dir string) {
 		},
 	}
 
-	privateBytes, err := os.ReadFile("id_rsa")
+	rsaPrivKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		log.Fatal("Failed to load private key", err)
+		log.Fatal("Cannot generate private key", err)
 	}
-
-	private, err := ssh.ParsePrivateKey(privateBytes)
+	private, err := ssh.NewSignerFromKey(rsaPrivKey)
 	if err != nil {
-		log.Fatal("Failed to parse private key", err)
+		log.Fatal("Cannot use rsa key for signing", err)
 	}
 
 	config.AddHostKey(private)
 
 	// Once a ServerConfig has been configured, connections can be
 	// accepted.
-	listener, err := net.Listen("tcp", "0.0.0.0:"+string(port))
+	listener, err := net.Listen("tcp", "0.0.0.0:"+fmt.Sprintf("%d", port))
 	if err != nil {
 		log.Fatal("failed to listen for connection", err)
 	}
 	fmt.Printf("Listening on %v\n", listener.Addr())
+	c <- struct{}{}
 
 	nConn, err := listener.Accept()
 	if err != nil {
