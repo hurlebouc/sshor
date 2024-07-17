@@ -26,7 +26,16 @@ func TestCopy(t *testing.T) {
 			},
 			"test3": {},
 		},
-		dirs: map[string]directoryLayout{},
+		dirs: map[string]directoryLayout{
+			"emptydir": {},
+			"subdir": {
+				files: map[string]file{
+					"subtest": {
+						content: []byte("sub"),
+					},
+				},
+			},
+		},
 	}
 	localDir := initTempDir(srcLayout)
 	defer func() {
