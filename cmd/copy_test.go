@@ -1270,3 +1270,141 @@ func TestCopyFileRemoteToExistingLocal(t *testing.T) {
 		t.Fatalf("final directory\n--> %+v\nis distinct from source directory\n--> %+v", copiedLayout, srcLayout)
 	}
 }
+
+func TestCopyDirLocalToFileRemote(t *testing.T) {
+	destDir := initTempDir(directoryLayout{
+		files: map[string]file{
+			"sub": {},
+		},
+	})
+	defer func() {
+		err := os.RemoveAll(destDir)
+		if err != nil {
+			panic(err)
+		}
+	}()
+	srcLayout := directoryLayout{
+		files: map[string]file{
+			"test1": {
+				content: []byte("coucou"),
+			},
+			"test2": {
+				content: []byte("plop"),
+			},
+			"test3": {},
+		},
+		dirs: map[string]directoryLayout{
+			"emptydir": {},
+			"subdir": {
+				files: map[string]file{
+					"subtest": {
+						content: []byte("sub"),
+					},
+				},
+			},
+		},
+	}
+	srcDir := initTempDir(srcLayout)
+	defer func() {
+		err := os.RemoveAll(srcDir)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	c := make(chan struct{})
+	port := uint16(rand.Uint32())
+	if port <= 1024 {
+		port = port + 1024
+	}
+	go startSftpServer(c, "toto", "totopwd", port, destDir)
+	<-c
+
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{
+		"sshor",
+		"copy",
+		srcDir,
+		"toto@127.0.0.1:sub",
+		"-w",
+		"totopwd",
+		"-p",
+		fmt.Sprintf("%d", port),
+	}
+	expectPanic(t, cmd.Execute)
+}
+
+func TestCopyDirRemoteToFileLocal(t *testing.T) {
+	destDir := initTempDir(directoryLayout{
+		files: map[string]file{
+			"sub": {},
+		},
+	})
+	defer func() {
+		err := os.RemoveAll(destDir)
+		if err != nil {
+			panic(err)
+		}
+	}()
+	subdir := directoryLayout{
+		files: map[string]file{
+			"test1": {
+				content: []byte("coucou"),
+			},
+			"test2": {
+				content: []byte("plop"),
+			},
+			"test3": {},
+		},
+		dirs: map[string]directoryLayout{
+			"emptydir": {},
+			"subdir": {
+				files: map[string]file{
+					"subtest": {
+						content: []byte("sub"),
+					},
+				},
+			},
+		},
+	}
+	srcLayout := directoryLayout{
+		files: map[string]file{
+			"foo": {
+				content: []byte("it's a trap!"),
+			},
+		},
+		dirs: map[string]directoryLayout{
+			"sub": subdir,
+		},
+	}
+	srcDir := initTempDir(srcLayout)
+	defer func() {
+		err := os.RemoveAll(srcDir)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	c := make(chan struct{})
+	port := uint16(rand.Uint32())
+	if port <= 1024 {
+		port = port + 1024
+	}
+	go startSftpServer(c, "toto", "totopwd", port, srcDir)
+	<-c
+
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{
+		"sshor",
+		"copy",
+		"toto@127.0.0.1:sub",
+		destDir,
+		"-w",
+		"totopwd",
+		"-p",
+		fmt.Sprintf("%d", port),
+	}
+	expectPanic(t, cmd.Execute)
+}
