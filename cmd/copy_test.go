@@ -2,6 +2,7 @@ package cmd_test
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"testing"
@@ -47,7 +48,11 @@ func TestCopyDirDotLocalToRemote(t *testing.T) {
 	}()
 
 	c := make(chan struct{})
-	go startSftpServer(c, "toto", "totopwd", 2344, destDir)
+	port := uint16(rand.Uint32())
+	if port <= 1024 {
+		port = port + 1024
+	}
+	go startSftpServer(c, "toto", "totopwd", port, destDir)
 	<-c
 
 	oldArgs := os.Args
@@ -60,7 +65,7 @@ func TestCopyDirDotLocalToRemote(t *testing.T) {
 		"-w",
 		"totopwd",
 		"-p",
-		"2344",
+		fmt.Sprintf("%d", port),
 	}
 	oldwd, err := os.Getwd()
 	if err != nil {
@@ -114,7 +119,11 @@ func TestCopyDirLocalToDotRemote(t *testing.T) {
 	}()
 
 	c := make(chan struct{})
-	go startSftpServer(c, "toto", "totopwd", 2344, destDir)
+	port := uint16(rand.Uint32())
+	if port <= 1024 {
+		port = port + 1024
+	}
+	go startSftpServer(c, "toto", "totopwd", port, destDir)
 	<-c
 
 	oldArgs := os.Args
@@ -127,7 +136,7 @@ func TestCopyDirLocalToDotRemote(t *testing.T) {
 		"-w",
 		"totopwd",
 		"-p",
-		"2344",
+		fmt.Sprintf("%d", port),
 	}
 	cmd.Execute()
 	copiedLayout := readDirectory(filepath.Join(destDir, filepath.Base(srcDir)))
@@ -136,6 +145,69 @@ func TestCopyDirLocalToDotRemote(t *testing.T) {
 	}
 }
 
+func TestCopyDirMissingLocalToRemote(t *testing.T) {
+	destDir := initTempDir(directoryLayout{
+		dirs: map[string]directoryLayout{
+			"sub": {},
+		},
+	})
+	defer func() {
+		err := os.RemoveAll(destDir)
+		if err != nil {
+			panic(err)
+		}
+	}()
+	srcLayout := directoryLayout{
+		files: map[string]file{
+			"test1": {
+				content: []byte("coucou"),
+			},
+			"test2": {
+				content: []byte("plop"),
+			},
+			"test3": {},
+		},
+		dirs: map[string]directoryLayout{
+			"emptydir": {},
+			"subdir": {
+				files: map[string]file{
+					"subtest": {
+						content: []byte("sub"),
+					},
+				},
+			},
+		},
+	}
+	srcDir := initTempDir(srcLayout)
+	defer func() {
+		err := os.RemoveAll(srcDir)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	c := make(chan struct{})
+	port := uint16(rand.Uint32())
+	if port <= 1024 {
+		port = port + 1024
+	}
+	go startSftpServer(c, "toto", "totopwd", port, destDir)
+	<-c
+
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{
+		"sshor",
+		"copy",
+		filepath.Join(srcDir, "plop"),
+		"toto@127.0.0.1:sub",
+		"-w",
+		"totopwd",
+		"-p",
+		fmt.Sprintf("%d", port),
+	}
+	expectPanic(t, cmd.Execute)
+}
 func TestCopyDirLocalToRemote(t *testing.T) {
 	destDir := initTempDir(directoryLayout{
 		dirs: map[string]directoryLayout{
@@ -178,7 +250,11 @@ func TestCopyDirLocalToRemote(t *testing.T) {
 	}()
 
 	c := make(chan struct{})
-	go startSftpServer(c, "toto", "totopwd", 2344, destDir)
+	port := uint16(rand.Uint32())
+	if port <= 1024 {
+		port = port + 1024
+	}
+	go startSftpServer(c, "toto", "totopwd", port, destDir)
 	<-c
 
 	oldArgs := os.Args
@@ -191,7 +267,7 @@ func TestCopyDirLocalToRemote(t *testing.T) {
 		"-w",
 		"totopwd",
 		"-p",
-		"2344",
+		fmt.Sprintf("%d", port),
 	}
 	cmd.Execute()
 	copiedLayout := readDirectory(filepath.Join(destDir, "sub", filepath.Base(srcDir)))
@@ -238,7 +314,11 @@ func TestCopyDirLocalToMissingRemote(t *testing.T) {
 	}()
 
 	c := make(chan struct{})
-	go startSftpServer(c, "toto", "totopwd", 2344, destDir)
+	port := uint16(rand.Uint32())
+	if port <= 1024 {
+		port = port + 1024
+	}
+	go startSftpServer(c, "toto", "totopwd", port, destDir)
 	<-c
 
 	oldArgs := os.Args
@@ -251,7 +331,7 @@ func TestCopyDirLocalToMissingRemote(t *testing.T) {
 		"-w",
 		"totopwd",
 		"-p",
-		"2344",
+		fmt.Sprintf("%d", port),
 	}
 	cmd.Execute()
 	copiedLayout := readDirectory(filepath.Join(destDir, "sub"))
@@ -298,7 +378,11 @@ func TestCopyDirDotRemoteToLocal(t *testing.T) {
 	}()
 
 	c := make(chan struct{})
-	go startSftpServer(c, "toto", "totopwd", 2344, srcDir)
+	port := uint16(rand.Uint32())
+	if port <= 1024 {
+		port = port + 1024
+	}
+	go startSftpServer(c, "toto", "totopwd", port, srcDir)
 	<-c
 
 	oldArgs := os.Args
@@ -311,7 +395,7 @@ func TestCopyDirDotRemoteToLocal(t *testing.T) {
 		"-w",
 		"totopwd",
 		"-p",
-		"2344",
+		fmt.Sprintf("%d", port),
 	}
 	cmd.Execute()
 	copiedLayout := readDirectory(destDir)
@@ -368,7 +452,11 @@ func TestCopyDirMissingRemoteToLocal(t *testing.T) {
 	}()
 
 	c := make(chan struct{})
-	go startSftpServer(c, "toto", "totopwd", 2344, srcDir)
+	port := uint16(rand.Uint32())
+	if port <= 1024 {
+		port = port + 1024
+	}
+	go startSftpServer(c, "toto", "totopwd", port, srcDir)
 	<-c
 
 	oldArgs := os.Args
@@ -381,15 +469,9 @@ func TestCopyDirMissingRemoteToLocal(t *testing.T) {
 		"-w",
 		"totopwd",
 		"-p",
-		"2344",
+		fmt.Sprintf("%d", port),
 	}
-	defer func() {
-		if recover() != nil {
-			fmt.Println("All is normal")
-		}
-	}()
-	cmd.Execute()
-	t.Fatal("Should not be here!")
+	expectPanic(t, cmd.Execute)
 }
 func TestCopyDirRemoteToLocal(t *testing.T) {
 	destDir := initTempDir(directoryLayout{})
@@ -444,7 +526,11 @@ func TestCopyDirRemoteToLocal(t *testing.T) {
 	}
 
 	c := make(chan struct{})
-	go startSftpServer(c, "toto", "totopwd", 2344, srcDir)
+	port := uint16(rand.Uint32())
+	if port <= 1024 {
+		port = port + 1024
+	}
+	go startSftpServer(c, "toto", "totopwd", port, srcDir)
 	<-c
 
 	oldArgs := os.Args
@@ -457,7 +543,7 @@ func TestCopyDirRemoteToLocal(t *testing.T) {
 		"-w",
 		"totopwd",
 		"-p",
-		"2344",
+		fmt.Sprintf("%d", port),
 	}
 	cmd.Execute()
 	copiedLayout := readDirectory(destDir)
@@ -519,7 +605,11 @@ func TestCopyDirRemoteToMissingLocal(t *testing.T) {
 	}
 
 	c := make(chan struct{})
-	go startSftpServer(c, "toto", "totopwd", 2344, srcDir)
+	port := uint16(rand.Uint32())
+	if port <= 1024 {
+		port = port + 1024
+	}
+	go startSftpServer(c, "toto", "totopwd", port, srcDir)
 	<-c
 
 	oldArgs := os.Args
@@ -532,7 +622,7 @@ func TestCopyDirRemoteToMissingLocal(t *testing.T) {
 		"-w",
 		"totopwd",
 		"-p",
-		"2344",
+		fmt.Sprintf("%d", port),
 	}
 	cmd.Execute()
 	copiedLayout := readDirectory(destDir)

@@ -291,3 +291,13 @@ func startSftpServer(c chan struct{}, login, paswword string, port uint16, dir s
 		log.Print("sftp client exited session.")
 	}
 }
+
+func expectPanic(t *testing.T, f func()) {
+	defer func() {
+		if recover() != nil {
+			fmt.Println("All is normal")
+		}
+	}()
+	f()
+	t.Fatal("Should not be here!")
+}
