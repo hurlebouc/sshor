@@ -136,29 +136,35 @@ func TestCopyDirRemoteToLocal(t *testing.T) {
 			panic(err)
 		}
 	}()
-	srcLayout := directoryLayout{
+	subdir := directoryLayout{
+		files: map[string]file{
+			"test1": {
+				content: []byte("coucou"),
+			},
+			"test2": {
+				content: []byte("plop"),
+			},
+			"test3": {},
+		},
 		dirs: map[string]directoryLayout{
-			"sub": {
+			"emptydir": {},
+			"subdir": {
 				files: map[string]file{
-					"test1": {
-						content: []byte("coucou"),
-					},
-					"test2": {
-						content: []byte("plop"),
-					},
-					"test3": {},
-				},
-				dirs: map[string]directoryLayout{
-					"emptydir": {},
-					"subdir": {
-						files: map[string]file{
-							"subtest": {
-								content: []byte("sub"),
-							},
-						},
+					"subtest": {
+						content: []byte("sub"),
 					},
 				},
 			},
+		},
+	}
+	srcLayout := directoryLayout{
+		files: map[string]file{
+			"foo": {
+				content: []byte("it's a trap!"),
+			},
+		},
+		dirs: map[string]directoryLayout{
+			"sub": subdir,
 		},
 	}
 	srcDir := initTempDir(srcLayout)
@@ -168,6 +174,11 @@ func TestCopyDirRemoteToLocal(t *testing.T) {
 			panic(err)
 		}
 	}()
+	expectedLayout := directoryLayout{
+		dirs: map[string]directoryLayout{
+			"sub": subdir,
+		},
+	}
 
 	c := make(chan struct{})
 	go startSftpServer(c, "toto", "totopwd", 2344, srcDir)
@@ -187,7 +198,7 @@ func TestCopyDirRemoteToLocal(t *testing.T) {
 	}
 	cmd.Execute()
 	copiedLayout := readDirectory(destDir)
-	if !equalDirs(copiedLayout, srcLayout) {
+	if !equalDirs(copiedLayout, expectedLayout) {
 		t.Fatalf("final directory\n--> %+v\nis distinct from source directory\n--> %+v", copiedLayout, srcLayout)
 	}
 }
