@@ -7,6 +7,7 @@ require (
 	github.com/pkg/sftp v1.13.6
 	github.com/samber/lo v1.42.0
 	github.com/spf13/cobra v1.8.1
+	github.com/things-go/go-socks5 v0.0.5
 	github.com/tobischo/gokeepasslib v1.0.0
 	golang.org/x/crypto v0.24.0
 	golang.org/x/term v0.21.0

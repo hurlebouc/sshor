@@ -29,8 +29,7 @@ func (ln localNet) Dial(n string, addr string) (net.Conn, error) {
 	return net.Dial(n, addr)
 }
 
-func proxy(options Options, srcNet, dstNet network, listeningIp string, listeningPort uint16, destinationAddr string, destinationPort uint16) {
-
+func listen(srcNet network, listeningIp string, listeningPort uint16) net.Listener {
 	listPort := listeningPort
 	if listeningPort == 0 {
 		listPort = randomPort()
@@ -40,11 +39,18 @@ func proxy(options Options, srcNet, dstNet network, listeningIp string, listenin
 
 	if listeningPort == 0 {
 		for err != nil {
-			listener, err = srcNet.Listen("tcp", fmt.Sprintf("%s:%d", listeningIp, listeningPort))
+			listPort = randomPort()
+			listener, err = srcNet.Listen("tcp", fmt.Sprintf("%s:%d", listeningIp, listPort))
 		}
 	}
 
 	log.Printf("listening at %s:%d", listeningIp, listPort)
+	return listener
+}
+
+func proxy(options Options, srcNet, dstNet network, listeningIp string, listeningPort uint16, destinationAddr string, destinationPort uint16) {
+
+	listener := listen(srcNet, listeningIp, listeningPort)
 
 	for {
 		localConn, err := listener.Accept()
@@ -86,8 +92,12 @@ func proxy(options Options, srcNet, dstNet network, listeningIp string, listenin
 }
 
 func ForwardProxy(hostConf config.Host, options Options, passwordFlag, keepassPwdFlag string, listeningIp string, listeningPort uint16, destinationAddr string, destinationPort uint16) {
-	proxy(options, localNet{}, getSshClient(hostConf, passwordFlag, keepassPwdFlag), listeningIp, listeningPort, destinationAddr, destinationPort)
+	sshClient := getSshClient(hostConf, passwordFlag, keepassPwdFlag)
+	defer sshClient.Close()
+	proxy(options, localNet{}, sshClient, listeningIp, listeningPort, destinationAddr, destinationPort)
 }
 func BackwardProxy(hostConf config.Host, options Options, passwordFlag, keepassPwdFlag string, listeningIp string, listeningPort uint16, destinationAddr string, destinationPort uint16) {
-	proxy(options, getSshClient(hostConf, passwordFlag, keepassPwdFlag), localNet{}, listeningIp, listeningPort, destinationAddr, destinationPort)
+	sshClient := getSshClient(hostConf, passwordFlag, keepassPwdFlag)
+	defer sshClient.Close()
+	proxy(options, sshClient, localNet{}, listeningIp, listeningPort, destinationAddr, destinationPort)
 }

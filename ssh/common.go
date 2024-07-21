@@ -209,7 +209,6 @@ func getSshClient(hostConf config.Host, passwordFlag, keepassPwdFlag string) *ss
 	keepassPwdMap := InitKeepassPwdMap(hostConf, keepassPwdFlag)
 	ctx := InitContext()
 	sshClient, _ := NewSshClient(ctx, hostConf, passwordFlag, keepassPwdMap)
-	defer sshClient.Close()
 	if sshClient.Client == nil {
 		log.Panicln("Cannot change user of proxied connection")
 	}
