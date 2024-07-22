@@ -4,6 +4,7 @@ go 1.22.3
 
 require (
 	cuelang.org/go v0.9.2
+	github.com/elazarl/goproxy v0.0.0-20240719135048-6ca80f564554
 	github.com/pkg/sftp v1.13.6
 	github.com/samber/lo v1.42.0
 	github.com/spf13/cobra v1.8.1
