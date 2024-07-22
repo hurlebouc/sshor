@@ -14,6 +14,13 @@ var proxyBackwardCmd = &cobra.Command{
 	Short: "Backward connections from remote to local",
 	Long:  `This command opens a listening port on remote host and backwards each request on this port to a destination accessible from the local host.`,
 	Args:  cobra.ExactArgs(1),
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) == 0 {
+			return findAllPossibleHosts(toComplete), cobra.ShellCompDirectiveDefault
+		} else {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ssh.BackwardProxy(getHostConfig(readConf(), args[0]), getOptions(), passwordFlag, keepassPwdFlag, proxyOptions.listeningIP, proxyOptions.listeningPort, proxyOptions.destinationIP, proxyOptions.destinationPort)
 	},

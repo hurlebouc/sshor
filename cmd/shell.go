@@ -19,9 +19,6 @@ var shellCmd = &cobra.Command{
 	Long:  `Open a remote shell in SSH`,
 	Args:  cobra.ExactArgs(1),
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		//fmt.Printf("debug cmd: %+v\n", cmd)
-		//fmt.Printf("debug args: %+v\n", args)
-		//fmt.Printf("debug toComplete: %s\n", toComplete)
 		if len(args) == 0 {
 			return findAllPossibleHosts(toComplete), cobra.ShellCompDirectiveDefault
 		} else {
