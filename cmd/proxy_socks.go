@@ -10,7 +10,7 @@ import (
 
 // proxyForwardCmd represents the proxy command
 var socksCmd = &cobra.Command{
-	Use:   "socks",
+	Use:   "proxy-socks",
 	Short: "Open socks server on local host serving requests from remote host",
 	Long:  "Open socks server on local host serving requests from remote host",
 	Args:  cobra.ExactArgs(1),
