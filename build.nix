@@ -2,7 +2,7 @@
 
 buildGoModule {
   pname = "sshor-go";
-  version = "1.0.0";
+  version = "1.0.1";
   #doCheck = false;
 
   src = nix-gitignore.gitignoreSource [ ".git" ".gitignore" "*.nix" ] ./.;

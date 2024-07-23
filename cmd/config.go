@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/hurlebouc/sshor/config"
 	"github.com/nwidger/jsoncolor"
@@ -31,9 +32,9 @@ var configCmd = &cobra.Command{
 			if err != nil {
 				panic(err)
 			}
-			println(string(res))
+			fmt.Println(string(res))
 		} else {
-			println(string(jsonBytes))
+			fmt.Println(string(jsonBytes))
 		}
 
 	},
