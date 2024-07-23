@@ -39,7 +39,7 @@ func ReadConfJson() ([]byte, error) {
 
 	path := "."
 	if !existCuePackage(path) {
-		path, err = filepath.Abs(configdir + "/sshor")
+		path, err = filepath.Abs(filepath.Join(configdir, "sshor"))
 		if err != nil {
 			panic(err)
 		}
@@ -77,9 +77,11 @@ func ReadConf() (*Config, error) {
 	}
 
 	config := Config{}
-	err = json.Unmarshal(jsonBytes, &config)
-	if err != nil {
-		return nil, err
+	if len(jsonBytes) != 0 {
+		err = json.Unmarshal(jsonBytes, &config)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &config, nil
