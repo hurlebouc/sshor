@@ -19,6 +19,9 @@ var copyCmd = &cobra.Command{
 	Short: "copy files from/to remote",
 	Long:  "copy files from/to remote",
 	Args:  cobra.MinimumNArgs(2),
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return lo.Map(findAllPossibleHosts(toComplete), func(item string, idx int) string { return item + ":" }), cobra.ShellCompDirectiveDefault
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		configGlobal := readConf()
 		env := map[string]copy.Endpoint{}
