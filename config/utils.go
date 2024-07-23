@@ -29,7 +29,7 @@ func existCuePackage(path string) bool {
 	return false
 }
 
-func ReadConf() (*Config, error) {
+func ReadConfJson() ([]byte, error) {
 	ctx := cuecontext.New()
 
 	configdir, err := os.UserConfigDir()
@@ -64,6 +64,14 @@ func ReadConf() (*Config, error) {
 	}
 
 	jsonBytes, err := value.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return jsonBytes, nil
+}
+
+func ReadConf() (*Config, error) {
+	jsonBytes, err := ReadConfJson()
 	if err != nil {
 		return nil, err
 	}

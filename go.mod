@@ -5,6 +5,7 @@ go 1.22.3
 require (
 	cuelang.org/go v0.9.2
 	github.com/elazarl/goproxy v0.0.0-20240719135048-6ca80f564554
+	github.com/nwidger/jsoncolor v0.3.2
 	github.com/pkg/sftp v1.13.6
 	github.com/samber/lo v1.42.0
 	github.com/spf13/cobra v1.8.1
@@ -18,9 +19,12 @@ require (
 	cuelabs.dev/go/oci/ociregistry v0.0.0-20240404174027-a39bec0462d2 // indirect
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
 	github.com/emicklei/proto v1.10.0 // indirect
+	github.com/fatih/color v1.9.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/fs v0.1.0 // indirect
+	github.com/mattn/go-colorable v0.1.4 // indirect
+	github.com/mattn/go-isatty v0.0.11 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
