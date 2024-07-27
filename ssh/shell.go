@@ -53,11 +53,14 @@ func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 		//ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
 	}
 
-	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	fd := int(os.Stdin.Fd())
+	oldState, err := term.MakeRaw(fd)
 	if err != nil {
 		panic(err)
 	}
-	defer term.Restore(int(os.Stdin.Fd()), oldState)
+	defer term.Restore(fd, oldState)
+
+	_ = adaptConsole(fd) // do nothing in case of error
 
 	width, height, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
