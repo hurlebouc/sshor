@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/hurlebouc/sshor/config"
+	tsize "github.com/kopoli/go-terminal-size"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 )
@@ -70,6 +71,23 @@ func Shell(hostConf config.Host, passwordFlag, keepassPwdFlag string) {
 	if err := session.RequestPty("xterm-256color", height, width, modes); err != nil {
 		panic(err)
 	}
+
+	sizeListener, err := tsize.NewSizeListener()
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		currentHeight := height
+		currentWidth := width
+		for change := range sizeListener.Change {
+			if currentHeight != change.Height || currentWidth != change.Width {
+				session.WindowChange(change.Height, change.Width)
+				currentHeight = change.Height
+				currentWidth = change.Width
+			}
+		}
+	}()
 
 	//session.Stdin = os.Stdin
 	input, err := session.StdinPipe()
