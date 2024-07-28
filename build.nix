@@ -2,10 +2,10 @@
 
 buildGoModule {
   pname = "sshor-go";
-  version = "1.0.3-beta";
+  version = "1.0.3";
   #doCheck = false;
 
   src = nix-gitignore.gitignoreSource [ ".git" ".gitignore" "*.nix" ] ./.;
 
-  vendorHash = "sha256-CHOhMeT3fN/eebTP0DuzwawMPBlnekYa0ebCODYWh5A="; # get hash after first build
+  vendorHash = "sha256-BK4bn/XSIDskmz4ksTmYforGPcOzkp2RPr3sgAGKjQ8="; # get hash after first build
 }

@@ -10,6 +10,7 @@ references:
 */
 
 import (
+	"golang.org/x/crypto/ssh"
 	"golang.org/x/sys/windows"
 )
 
@@ -27,4 +28,26 @@ func adaptConsole(fd int) error {
 		return err
 	}
 	return nil
+}
+
+func startWindowChangeListerner(session *ssh.Session, height, width int) {
+
+	// This code is disabled because libraty tsize does not seems to works very well with Windows
+
+	// sizeListener, err := tsize.NewSizeListener()
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// go func() {
+	// 	currentHeight := height
+	// 	currentWidth := width
+	// 	for change := range sizeListener.Change {
+	// 		if currentHeight != change.Height || currentWidth != change.Width {
+	// 			session.WindowChange(change.Height, change.Width)
+	// 			currentHeight = change.Height
+	// 			currentWidth = change.Width
+	// 		}
+	// 	}
+	// }()
 }

@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const Version = "1.0.3-beta"
+const Version = "1.0.3"
 
 var keepassPathFlag string
 var keepassIdFlag string
