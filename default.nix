@@ -1,5 +1,5 @@
 let
-  nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-unstable";
+  nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/archive/b73c2221a46c13557b1b3be9c2070cc42cf01eb3.tar.gz";
   pkgs = import nixpkgs { config = { }; overlays = [ ]; };
   build = pkgs.callPackage ./build.nix { };
   HOME = builtins.getEnv "HOME";
