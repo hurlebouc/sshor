@@ -1,0 +1,18 @@
+version: "3.4"
+
+services:
+  sshor:
+    image: sshor
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      target: package
+  sshor-dev:
+    image: sshor-dev
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - ../.:/workspaces:cached
+    command: sleep infinity

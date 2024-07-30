@@ -1,0 +1,11 @@
+/result*
+sshor
+sshor.exe
+Dockerfile
+.devcontainer.json
+.github
+*.nix
+*.cue
+.git
+.gitignore
+compose.yml
