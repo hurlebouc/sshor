@@ -11,11 +11,10 @@ in
     hardeningDisable = [ "fortify" ];
     inputsFrom = [ build ];
     packages = [
-
       pkgs.git
-
       pkgs.nixpkgs-fmt
-
+      pkgs.gh
+      pkgs.podman-compose
     ];
 
     shellHook = ''
