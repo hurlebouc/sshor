@@ -10,6 +10,5 @@ Dockerfile
 .gitignore
 compose.yml
 build.sh
-Makefile
 bin
 target
