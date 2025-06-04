@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-	"github.com/tobischo/gokeepasslib"
+	"github.com/tobischo/gokeepasslib/v3"
 )
 
 func findEntries(groups []gokeepasslib.Group, path []string, username string) []gokeepasslib.Entry {

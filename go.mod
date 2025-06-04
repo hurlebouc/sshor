@@ -1,6 +1,8 @@
 module github.com/hurlebouc/sshor
 
-go 1.22.3
+go 1.23.0
+
+toolchain go1.23.9
 
 require (
 	cuelang.org/go v0.9.2
@@ -11,10 +13,10 @@ require (
 	github.com/samber/lo v1.42.0
 	github.com/spf13/cobra v1.8.1
 	github.com/things-go/go-socks5 v0.0.5
-	github.com/tobischo/gokeepasslib v1.0.0
-	golang.org/x/crypto v0.24.0
-	golang.org/x/sys v0.21.0
-	golang.org/x/term v0.21.0
+	github.com/tobischo/gokeepasslib/v3 v3.6.1
+	golang.org/x/crypto v0.31.0
+	golang.org/x/sys v0.28.0
+	golang.org/x/term v0.27.0
 )
 
 require (
@@ -33,10 +35,11 @@ require (
 	github.com/protocolbuffers/txtpbfmt v0.0.0-20230328191034-3462fbc510c0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
+	github.com/tobischo/argon2 v0.1.0 // indirect
+	golang.org/x/exp v0.0.0-20230105202349-8879d0199aa3 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/oauth2 v0.20.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
