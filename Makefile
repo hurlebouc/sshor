@@ -1,6 +1,10 @@
 build:
 	go build -v .
 
+.PHONY: test
+test:
+	go test ./...
+
 build-all:
 	GOOS=linux GOARCH=amd64 go build -v -o sshor-linux-amd64 .
 	GOOS=linux GOARCH=386 go build -v -o sshor-linux-386 .
