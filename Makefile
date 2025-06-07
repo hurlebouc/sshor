@@ -18,7 +18,7 @@ build-all:
 	GOOS=darwin GOARCH=arm64 go build -v -o sshor-darwin-arm64 .
 
 sign:
-	for file in target/bin/*; do if [[ $$file != *.asc ]] then gpg --detach-sign --armor --batch --yes $${file}; fi; done
+	for file in target/bin/*; do bash -c "if [[ $$file != *.asc ]] then gpg --detach-sign --armor --batch --yes $${file}; fi"; done
 
 deploy-latest: sign
 	name=$$(gh release view --json name --template '{{ .name }}') && gh release upload "$$name" target/bin/*
