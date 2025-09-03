@@ -1,4 +1,4 @@
-FROM golang:1.23.10-alpine3.21 as base
+FROM golang:1.24.6-alpine3.21 as base
 run apk add --no-cache make
 
 FROM base as dev
